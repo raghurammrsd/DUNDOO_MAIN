@@ -81,23 +81,25 @@ def register():
             return redirect(url_for("user.register"))
 
         hashed = generate_password_hash(password)
-
-        payload = {
-            "username": username,
-            "email": email,
-            "phone": phone,
-            "password_hash": hashed,
-        }
-
-        start_otp_flow(
-            context="user_register",
+        new_user = User(
+            username=username,
             email=email,
-            name=username,
-            payload=payload,
+            phone=phone,
+            password_hash=hashed,
+            email_verified=True,
         )
 
-        flash("OTP sent to your email.", "info")
-        return redirect(url_for("user.verify_otp_view"))
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            login_user(new_user)
+            flash("Account created successfully! Welcome to your dashboard.", "success")
+            return redirect(url_for("user.dashboard"))
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error creating user account: {e}")
+            flash("An error occurred during account creation. Please try again.", "danger")
+            return redirect(url_for("user.register"))
 
     return render_template("user/register.html")
 
