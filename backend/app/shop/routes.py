@@ -6,7 +6,7 @@ import uuid
 
 from flask import (
     Blueprint, render_template, request, redirect, url_for,
-    flash, session, current_app, send_file
+    flash, session, current_app, send_file, jsonify
 )
 from sqlalchemy import func
 from werkzeug.utils import secure_filename
@@ -102,6 +102,15 @@ def register():
             password_hash=generate_password_hash(password),
             whatsapp_number=whatsapp_number
         )
+
+        if "shop_image" in request.files:
+            sf = request.files["shop_image"]
+            if sf and sf.filename:
+                new_shop.shop_image = upload_image(sf, folder="dundoo/shops", prefix="shop_banner")
+        if "profile_image" in request.files:
+            pf = request.files["profile_image"]
+            if pf and pf.filename:
+                new_shop.profile_image = upload_image(pf, folder="dundoo/shops", prefix="shop_profile")
 
         try:
             db.session.add(new_shop)
@@ -368,7 +377,7 @@ def update_order_status():
         if order.user:
             subj = f"Order #{order.id} Status Updated: {status}"
             body = f"Hello {order.user.username},\n\nYour order from shop '{shop.shop_name}' has been updated to: *{status}*.\n• Item: {order.product.product_name if order.product else 'Product'}\n• Amount: ₹{order.price}\n\nThank you for shopping nearby on DUNDOO AI Marketplace!"
-            send_whatsapp_alert(order.user, subj, body, message_type="order")
+            send_whatsapp_alert(order.user, subj, body, message_type="status_update")
     except Exception as e:
         current_app.logger.error(f"WhatsApp order status alert error: {e}")
     return jsonify({"success": True, "status": status})
@@ -1432,6 +1441,25 @@ def settings():
                 new_lon = float(lon_str)
             except ValueError:
                 flash("Could not parse latitude/longitude from browser.", "warning")
+
+        # Handle image uploads
+        if "shop_image" in request.files:
+            s_file = request.files["shop_image"]
+            if s_file and s_file.filename:
+                s_name = upload_image(s_file, folder="dundoo/shops", prefix=f"shop_banner_{shop.id}")
+                if s_name:
+                    shop.shop_image = s_name
+
+        if "profile_image" in request.files:
+            p_file = request.files["profile_image"]
+            if p_file and p_file.filename:
+                p_name = upload_image(p_file, folder="dundoo/shops", prefix=f"shop_profile_{shop.id}")
+                if p_name:
+                    shop.profile_image = p_name
+
+        whatsapp_number = (request.form.get("whatsapp_number") or "").strip()
+        if whatsapp_number:
+            shop.whatsapp_number = whatsapp_number
 
         # Save changes
         shop.shop_name = shop_name

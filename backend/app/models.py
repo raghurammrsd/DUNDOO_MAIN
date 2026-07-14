@@ -1,6 +1,7 @@
 from datetime import datetime
 from flask_login import UserMixin
 from app import db
+from app.utils.storage import optimize_cloudinary_url
 
 
 
@@ -14,10 +15,18 @@ class User(UserMixin, db.Model):
 
     phone = db.Column(db.String(20))
     whatsapp_number = db.Column(db.String(20), nullable=True)
+    profile_image = db.Column(db.String(255), nullable=True)
     password_hash = db.Column(db.String(255), nullable=False)
     email_verified = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
+    @property
+    def profile_image_url(self):
+        if not self.profile_image:
+            return None
+        if self.profile_image.startswith("http://") or self.profile_image.startswith("https://"):
+            return optimize_cloudinary_url(self.profile_image, width=400)
+        return f"/static/uploads/users/{self.profile_image}"
 
 
 
@@ -36,8 +45,24 @@ class Shopkeeper(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     password_hash = db.Column(db.String(255), nullable=True)
     whatsapp_number = db.Column(db.String(20), nullable=True)
+    shop_image = db.Column(db.String(255), nullable=True)
+    profile_image = db.Column(db.String(255), nullable=True)
 
-    
+    @property
+    def shop_image_url(self):
+        if not self.shop_image:
+            return None
+        if self.shop_image.startswith("http://") or self.shop_image.startswith("https://"):
+            return optimize_cloudinary_url(self.shop_image, width=900)
+        return f"/static/uploads/shops/{self.shop_image}"
+
+    @property
+    def profile_image_url(self):
+        if not self.profile_image:
+            return None
+        if self.profile_image.startswith("http://") or self.profile_image.startswith("https://"):
+            return optimize_cloudinary_url(self.profile_image, width=400)
+        return f"/static/uploads/shops/{self.profile_image}"
 
 
 
@@ -107,7 +132,9 @@ class Product(db.Model):
         img = self.display_image
         if not img:
             return "/static/uploads/products/1_1783415630_images_1.jpeg"
-        if img.startswith("http://") or img.startswith("https://") or img.startswith("/"):
+        if img.startswith("http://") or img.startswith("https://"):
+            return optimize_cloudinary_url(img, width=800)
+        if img.startswith("/"):
             return img
         return f"/static/uploads/products/{img}"
 

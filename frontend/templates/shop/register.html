@@ -12,7 +12,7 @@
       </p>
     </div>
 
-    <form method="post" class="form-grid">
+    <form method="post" enctype="multipart/form-data" class="form-grid">
 
       <div class="form-row-2">
         <div class="form-group">
@@ -44,6 +44,24 @@
         <div class="form-group">
           <label class="form-label">WhatsApp Number (Alerts)</label>
           <input type="text" name="whatsapp_number" class="form-input" placeholder="+91 9876543210" required>
+        </div>
+      </div>
+
+      <!-- Shop Images -->
+      <div style="background: #f0fdf4; border: 1.5px solid #bbf7d0; padding: 16px; border-radius: 12px; margin-bottom: 8px;">
+        <label class="form-label" style="color: #166534; font-weight: 800; margin-bottom: 8px;">🖼️ Shop & Profile Images (Real Photos for Nearby Customers)</label>
+        <p style="font-size: 12px; color: #374151; margin-bottom: 12px; font-weight: 600;">
+          Upload real photos of your shop storefront and yourself!
+        </p>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label" style="font-size: 12.5px;">Storefront Banner</label>
+            <input type="file" name="shop_image" accept="image/*" class="form-input" style="background: #fff; padding: 6px;">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size: 12.5px;">Shopkeeper Photo</label>
+            <input type="file" name="profile_image" accept="image/*" class="form-input" style="background: #fff; padding: 6px;">
+          </div>
         </div>
       </div>
 

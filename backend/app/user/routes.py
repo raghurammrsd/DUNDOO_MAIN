@@ -25,6 +25,7 @@ from app.otp_utils import (
     verify_otp,
     get_current_record,
 )
+from app.utils.storage import upload_image
 from app.whatsapp_utils import send_whatsapp_alert
 
 user_bp = Blueprint("user", __name__, url_prefix="/user")
@@ -631,7 +632,11 @@ def nearby_shops_discovery():
     for s in shops:
         dist = calc_distance(lat, lng, s.latitude, s.longitude) if lat and lng and s.latitude and s.longitude else 3.0
         res.append({
+            "shop_id": s.id,
             "shop_name": s.shop_name,
+            "shopkeeper_name": s.shopkeeper_name,
+            "shop_image_url": s.shop_image_url or "/static/uploads/products/1_1783415630_images_1.jpeg",
+            "profile_image_url": s.profile_image_url or None,
             "rating": 4.8,
             "distance_km": round(dist or 0, 1),
         })
@@ -648,9 +653,56 @@ def transactions():
     ]
     return render_template("user/transactions.html", transactions=mock_transactions)
 
-@user_bp.route("/settings")
+@user_bp.route("/settings", methods=["GET", "POST"])
 @login_required
 def settings():
+    if request.method == "POST":
+        username = (request.form.get("username") or "").strip()
+        email = (request.form.get("email") or "").strip()
+        phone = (request.form.get("phone") or "").strip()
+        whatsapp_number = (request.form.get("whatsapp_number") or "").strip()
+        password = (request.form.get("password") or "").strip()
+
+        if username and username != current_user.username:
+            existing_user = User.query.filter(func.lower(User.username) == username.lower()).first()
+            if existing_user:
+                flash("Username already taken.", "danger")
+                return redirect(url_for("user.settings"))
+            current_user.username = username
+
+        if email and email != current_user.email:
+            existing_email = User.query.filter(func.lower(User.email) == email.lower()).first()
+            if existing_email:
+                flash("Email already registered by another account.", "danger")
+                return redirect(url_for("user.settings"))
+            current_user.email = email
+
+        if phone:
+            current_user.phone = phone
+        if whatsapp_number:
+            current_user.whatsapp_number = whatsapp_number
+        elif phone and not current_user.whatsapp_number:
+            current_user.whatsapp_number = phone
+
+        if password:
+            current_user.password_hash = generate_password_hash(password)
+
+        if "profile_image" in request.files:
+            file_obj = request.files["profile_image"]
+            if file_obj and file_obj.filename:
+                image_name = upload_image(file_obj, folder="dundoo/users", prefix=f"user_{current_user.id}")
+                if image_name:
+                    current_user.profile_image = image_name
+
+        try:
+            db.session.commit()
+            flash("Profile & account settings updated successfully!", "success")
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error updating user settings: {e}")
+            flash("Failed to update profile settings. Please try again.", "danger")
+        return redirect(url_for("user.settings"))
+
     return render_template("user/settings.html", user=current_user)
 
 @user_bp.route("/api/search/suggestions")

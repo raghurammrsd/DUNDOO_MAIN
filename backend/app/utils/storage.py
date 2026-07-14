@@ -82,6 +82,19 @@ def _compress_image(file_obj, max_dimension=1080, quality=75):
         return file_obj, False
 
 
+def optimize_cloudinary_url(url: str, width: int = 800) -> str:
+    """
+    Ensure every Cloudinary URL served to the frontend includes automatic
+    format conversion (`f_auto`) and aggressive quality compression (`q_auto:eco,c_limit`).
+    """
+    if not url or "res.cloudinary.com" not in url or "/upload/" not in url:
+        return url
+    if "/f_auto" in url or "/q_auto" in url:
+        return url
+    parts = url.split("/upload/")
+    return f"{parts[0]}/upload/f_auto,q_auto:eco,w_{width},c_limit/{parts[1]}"
+
+
 def upload_image(file_obj, folder="dundoo/products", prefix=""):
     """
     Upload a compressed image file either to Cloudinary CDN (if configured) or local disk.
@@ -93,8 +106,8 @@ def upload_image(file_obj, folder="dundoo/products", prefix=""):
     filename = secure_filename(file_obj.filename)
     unique_name = f"{prefix}_{int(time.time())}_{filename}" if prefix else f"{int(time.time())}_{filename}"
 
-    # 1. Pre-compress in Python memory to reduce file size to ~50KB-80KB before storage
-    compressed_file, was_compressed = _compress_image(file_obj, max_dimension=1080, quality=75)
+    # 1. Pre-compress in Python memory to reduce file size to ~40KB-70KB before storage
+    compressed_file, was_compressed = _compress_image(file_obj, max_dimension=900, quality=70)
     if was_compressed and not unique_name.lower().endswith((".jpg", ".jpeg")):
         unique_name = unique_name.rsplit(".", 1)[0] + ".jpg"
 
@@ -107,13 +120,13 @@ def upload_image(file_obj, folder="dundoo/products", prefix=""):
                 folder=folder,
                 public_id=unique_name.rsplit(".", 1)[0],
                 resource_type="image",
-                # Cloudinary transformation to guarantee lowest possible delivery storage & bandwidth (WebP/AVIF auto-format)
                 transformation=[
-                    {"width": 1080, "height": 1080, "crop": "limit"},
-                    {"quality": "auto:low", "fetch_format": "auto"}
+                    {"width": 900, "height": 900, "crop": "limit"},
+                    {"quality": "auto:eco", "fetch_format": "auto"}
                 ]
             )
-            return upload_result.get("secure_url") or upload_result.get("url")
+            raw_url = upload_result.get("secure_url") or upload_result.get("url")
+            return optimize_cloudinary_url(raw_url, width=900)
         except Exception as e:
             current_app.logger.error(f"Cloudinary image upload failed ({e}), falling back to local disk.")
             compressed_file.seek(0)

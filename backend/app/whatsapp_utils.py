@@ -26,17 +26,59 @@ def send_whatsapp_alert(target, subject: str, body: str, message_type: str = "al
             target_id = getattr(target, "id", None)
             shop_id = None
 
-    formatted_msg = f"""⚡ *DUNDOO Automated Alert* ⚡
-*Recipient:* {account_name}
-*DUNDOO ID:* #{target_id or 'System'}
------------------------------------------
-*📌 Subject:* {subject}
+    if message_type == "order":
+        formatted_msg = f"""🛒 *DUNDOO NEW ORDER DISPATCH* 🛒
+🏪 *Shop:* {account_name}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📢 *{subject}*
 
 {body}
 
------------------------------------------
-🤖 _Automated by DUNDOO AI Cloud Marketplace_
-🌐 https://dundoo-main.onrender.com"""
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👉 *Action Required:* Open your live DUNDOO Dashboard now to fulfill this customer order!
+🌐 https://main.dundoo-app.pages.dev/shop/dashboard"""
+    elif message_type == "status_update":
+        formatted_msg = f"""📦 *DUNDOO ORDER STATUS UPDATE* 📦
+👤 *Customer:* {account_name}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔔 *{subject}*
+
+{body}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ Thank you for shopping nearby with DUNDOO AI Marketplace!
+🌐 https://main.dundoo-app.pages.dev/user/my-orders"""
+    elif message_type == "inventory":
+        formatted_msg = f"""⚠️ *DUNDOO INVENTORY WARNING* ⚠️
+🏪 *Shop:* {account_name}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📉 *{subject}*
+
+{body}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚡ Restock today to avoid missing out on nearby customer sales!
+🌐 https://main.dundoo-app.pages.dev/shop/stock"""
+    elif message_type == "welcome":
+        formatted_msg = f"""🎉 *WELCOME TO DUNDOO WHATSAPP NETWORK* 🎉
+👋 *Member:* {account_name}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🌟 *{subject}*
+
+{body}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📲 You are now fully connected to instant automated DUNDOO WhatsApp notifications!"""
+    else:
+        formatted_msg = f"""⚡ *DUNDOO OFFICIAL NOTIFICATION* ⚡
+📌 *Recipient:* {account_name}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📢 *{subject}*
+
+{body}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🤖 _Automated by DUNDOO Cloud AI_"""
 
     # Save to database record
     try:

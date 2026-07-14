@@ -32,13 +32,26 @@
         <div style="flex-grow: 1;">
           <h2 style="font-weight: 800; margin: 0 0 12px 0; color: #111827; font-size: 32px;">{{ product.product_name }}</h2>
           
-          <div style="display: inline-block; background: #dcfce7; color: #166534; padding: 6px 16px; border-radius: 999px; font-weight: 700; font-size: 14px; margin-bottom: 16px;">
-            Shop: {{ shop.shop_name }}
+          <div style="display: flex; align-items: center; gap: 12px; background: #f0fdf4; border: 1.5px solid #bbf7d0; padding: 12px 18px; border-radius: 16px; margin-bottom: 20px;">
+            {% if shop.profile_image_url %}
+              <img src="{{ shop.profile_image_url }}" alt="Shopkeeper" style="width: 54px; height: 54px; border-radius: 50%; object-fit: cover; border: 2.5px solid #16a34a;">
+            {% else %}
+              <div style="width: 54px; height: 54px; border-radius: 50%; background: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                <i class="fas fa-store"></i>
+              </div>
+            {% endif %}
+            <div>
+              <div style="font-weight: 800; font-size: 16px; color: #166534;">
+                <i class="fas fa-check-circle"></i> {{ shop.shop_name }}
+              </div>
+              <div style="font-size: 13px; color: #374151; font-weight: 600;">
+                Managed by: {{ shop.shopkeeper_name }}
+              </div>
+              <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+                <i class="fas fa-map-marker-alt" style="color:#16a34a;"></i> {{ shop.address }} ({{ shop.pincode }})
+              </div>
+            </div>
           </div>
-          
-          <p style="color: #4b5563; font-size: 14px; margin: 0 0 16px 0; font-weight: 600;">
-            Location: {{ shop.address }} ({{ shop.pincode }})
-          </p>
 
           {% if product.description %}
             <div style="padding: 16px; border-radius: 16px; background: rgba(255,255,255,0.6); border: 1px solid rgba(22,163,74,0.1); margin-bottom: 20px;">
