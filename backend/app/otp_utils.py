@@ -29,12 +29,27 @@ def _async_send_email_otp(to_email: str, otp: str, name: str, smtp_host: str, sm
     msg["To"] = to_email
 
     try:
-        with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=8.0) as server:
-            server.login(smtp_user, smtp_pass)
-            server.sendmail(smtp_user, [to_email], msg.as_string())
+        if smtp_port == 587 or smtp_port == 25:
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=10.0) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(smtp_user, [to_email], msg.as_string())
+        else:
+            with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10.0) as server:
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(smtp_user, [to_email], msg.as_string())
         print(f"[OTP EMAIL SENT SUCCESSFULLY] to {to_email}")
     except Exception as e:
         print(f"[OTP EMAIL SEND ERROR] to {to_email}: {e}")
+        try:
+            with smtplib.SMTP(smtp_host, 587, timeout=10.0) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(smtp_user, [to_email], msg.as_string())
+            print(f"[OTP EMAIL SENT SUCCESSFULLY VIA PORT 587 STARTTLS FALLBACK] to {to_email}")
+        except Exception as e2:
+            print(f"[OTP PORT 587 FALLBACK ERROR]: {e2}")
+            print(f"\n=======================================================\n[EMERGENCY DEV OTP FOR {to_email}]: {otp}\n=======================================================\n")
 
 
 def send_email_otp(to_email: str, otp: str, name: str) -> bool:
@@ -70,6 +85,7 @@ def start_otp_flow(context: str, email: str, name: str, payload: dict) -> bool:
         db.session.add(req)
         db.session.commit()
         session["otp_record_id"] = req.id
+        session["dev_otp_code"] = otp
     except Exception as e:
         db.session.rollback()
         if current_app:

@@ -148,6 +148,7 @@ def verify_otp_view():
         "auth/verify_otp.html",
         email=record.email,
         role="user",
+        dev_otp=session.get("dev_otp_code")
     )
 
 

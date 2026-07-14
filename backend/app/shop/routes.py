@@ -150,7 +150,7 @@ def verify_otp_view():
         session["shop_id"] = data["payload"]["shop_id"]
         return redirect(url_for("shop.dashboard"))
 
-    return render_template("auth/verify_otp.html", email=rec.email, role="shop")
+    return render_template("auth/verify_otp.html", email=rec.email, role="shop", dev_otp=session.get("dev_otp_code"))
 
 
 
