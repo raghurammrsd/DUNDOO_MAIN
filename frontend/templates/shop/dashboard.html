@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+{% block title %}Shop Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+
+  
+{% include "shop/_sidebar.html" %}
+
+
+
+  <main class="dashboard-main">
+
+    <header class="dashboard-header" style="justify-content: space-between; align-items: center; display: flex;">
+      <div>
+        <h1 class="welcome-title">Welcome back, {{ shop.shopkeeper_name|title }}</h1>
+        <p class="welcome-subtitle">
+          Track your business performance and key metrics.
+        </p>
+      </div>
+      
+      <!-- Shop Voice Search Bar -->
+      <div class="ai-search-bar" style="background: #ffffff; border: 2px solid #e5e7eb; display: flex; align-items: center; padding: 0 8px; border-radius: 999px; width: 420px;">
+          <input type="text" id="shop-search-input" style="background: transparent; flex-grow: 1; border: none; outline: none; padding: 12px; font-weight: 600;" placeholder="Search or say 'Add Product'">
+          
+          <select id="shop-voice-lang-select" style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px; color: #4b5563; font-weight: 700; padding: 4px; margin-right: 8px; outline: none;">
+              <option value="en-IN">EN</option>
+              <option value="hi-IN">HI</option>
+              <option value="te-IN">TE</option>
+          </select>
+
+          <button id="shop-voice-search-btn" class="action-btn" style="background: #f3f4f6; color: #4b5563; border: none; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;">
+              <i class="fas fa-microphone" style="margin:0;"></i>
+          </button>
+      </div>
+    </header>
+     
+    
+    
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Today's Sales</div>
+        <div class="kpi-value">
+          ₹{{ '%.2f'|format(stats.todays_sales) }}
+        </div>
+        <div class="kpi-caption">
+          Total amount sold today
+        </div>
+      </div>
+
+      <div class="kpi-card kpi-positive">
+        <div class="kpi-label">Today's Profit</div>
+        <div class="kpi-value">
+          ₹{{ '%.2f'|format(stats.todays_profit) }}
+        </div>
+        <div class="kpi-caption">
+          {{ stats.total_units_sold_today }} units sold
+        </div>
+      </div>
+
+      <div class="kpi-card kpi-positive">
+        <div class="kpi-label">Monthly Profit</div>
+        <div class="kpi-value">
+          ₹{{ '%.2f'|format(stats.monthly_profit) }}
+        </div>
+        <div class="kpi-caption">
+          This month's cumulative profit
+        </div>
+      </div>
+
+      <div class="kpi-card kpi-negative">
+        <div class="kpi-label">Monthly Loss</div>
+        <div class="kpi-value">
+          ₹{{ '%.2f'|format(stats.monthly_loss) }}
+        </div>
+        <div class="kpi-caption">
+          Includes damaged stock & discounts
+        </div>
+      </div>
+      <div class="kpi-card kpi-positive">
+        <div class="kpi-label">Online Revenue</div>
+        <div class="kpi-value">
+          ₹{{ '%.2f'|format(online_revenue) }}
+        </div>
+        <div class="kpi-caption">
+          Razorpay payments
+        </div>
+      </div>
+      
+      <div class="kpi-card kpi-warning">
+        <div class="kpi-label">Low Stock Items</div>
+        <div class="kpi-value">
+          {{ stats.low_stock_items }}
+        </div>
+        <div class="kpi-caption">
+          Items below threshold
+        </div>
+      </div>
+    </section>
+
+    
+    <section class="charts-row">
+      <div class="card chart-card">
+        <div class="card-header">
+          <span>Sales & Profit (Last 7 days)</span>
+        </div>
+        <div class="card-body chart-body">
+          <canvas id="salesChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="card-header">
+          <span>Stock Value by Product</span>
+        </div>
+        <div class="card-body chart-body">
+          {% if stock_labels %}
+            <canvas id="stockChart"></canvas>
+          {% else %}
+            <p class="empty-state">
+              Add products with price & quantity to see the stock chart.
+            </p>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    
+    <section class="card table-card mb-6" style="margin-bottom: 32px;">
+      <div class="card-header">
+        <span>📦 Live Customer Orders</span>
+        <span style="font-size: 13px; font-weight: 600; color: #16a34a;">Real-Time Email Alerts Enabled</span>
+      </div>
+      <div class="card-body table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Product</th>
+              <th>Qty</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th class="text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if orders %}
+              {% for o in orders %}
+              <tr>
+                <td style="font-weight: 700;">#{{ o.id }}</td>
+                <td>{{ o.user.username if o.user else "Customer" }}</td>
+                <td style="font-weight: 600; color: #111827;">{{ o.product.product_name if o.product else "Item" }}</td>
+                <td>{{ o.quantity or 1 }}</td>
+                <td style="font-weight: 800; color: #16a34a;">₹{{ "%.2f"|format(o.price or 0) }}</td>
+                <td>
+                  <span id="status-badge-{{ o.id }}" style="padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; background: {% if o.status == 'Ready to Collect' %}#dcfce7; color: #166534{% elif o.status == 'Delivered' %}#e0e7ff; color: #3730a3{% else %}#fef3c7; color: #92400e{% endif %};">
+                    {{ o.status }}
+                  </span>
+                </td>
+                <td class="text-right" style="white-space: nowrap;">
+                  <select onchange="updateOrderStatus({{ o.id }}, this.value, '{{ o.user.phone or '919876543210' }}', '{{ o.product.product_name|escape }}', '{{ o.price }}')" style="padding: 6px 10px; border-radius: 8px; border: 1px solid #16a34a; font-weight: 700; color: #115320; background: #f0fdf4; cursor: pointer;">
+                    <option value="Placed" {% if o.status == 'Placed' %}selected{% endif %}>Placed</option>
+                    <option value="Packing" {% if o.status == 'Packing' %}selected{% endif %}>Packing</option>
+                    <option value="Ready to Collect" {% if o.status == 'Ready to Collect' %}selected{% endif %}>Ready to Collect</option>
+                    <option value="Out for Delivery" {% if o.status == 'Out for Delivery' %}selected{% endif %}>Out for Delivery</option>
+                    <option value="Delivered" {% if o.status == 'Delivered' %}selected{% endif %}>Delivered</option>
+                  </select>
+                  <a href="https://wa.me/{{ o.user.phone or '919876543210' }}?text=Hi%20Customer,%20your%20Order%20%23{{ o.id }}%20({{ o.product.product_name|urlencode }}%20-%20₹{{ o.price }})%20is%20now%20{{ o.status|urlencode }}.%20Total%20Billing:%20₹{{ o.price }}." target="_blank" id="wa-btn-{{ o.id }}" class="premium-btn" style="text-decoration: none; padding: 6px 12px; font-size: 12px; margin-left: 6px; display: inline-block;">
+                    💬 WhatsApp Billing
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="7" class="empty-row">No live customer orders received yet.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card table-card">
+      <div class="card-header card-header-actions">
+        <span>Current Stock</span>
+        <div class="card-actions">
+          <a href="{{ url_for('shop.add_product') }}" class="btn btn-primary btn-sm">
+            + Add Product
+          </a>
+          <a href="{{ url_for('shop.stock') }}" class="btn btn-ghost btn-sm">
+            Manage Stock
+          </a>
+        </div>
+      </div>
+
+      <div class="card-body table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Price (₹)</th>
+              <th>Current Stock</th>
+              <th>Low Threshold</th>
+              <th>Expiry</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in products %}
+            <tr class="{% if p.quantity <= (p.low_stock_threshold or 10) %}row-low-stock{% endif %}">
+              <td style="font-weight: 800; color: #111827;">{{ p.product_name }}</td>
+              <td><span style="background: #f0fdf4; color: #16a34a; font-weight: 700; padding: 2px 8px; border-radius: 6px; font-size: 12px;">{{ p.category or "Grocery" }}</span></td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <span style="font-weight: 800; color: #115320;">₹</span>
+                  <input type="number" step="0.01" id="price-input-{{ p.id }}" value="{{ '%.2f'|format(p.price or 0) }}" style="width: 70px; padding: 4px 6px; border-radius: 6px; border: 1px solid #16a34a; font-weight: 800; color: #111827;">
+                  <button onclick="quickUpdatePrice({{ p.id }})" style="background: #16a34a; color: white; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 800; cursor: pointer;" title="Save Price">✓</button>
+                </div>
+              </td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <input type="number" id="qty-input-{{ p.id }}" value="{{ p.quantity }}" style="width: 60px; padding: 4px 6px; border-radius: 6px; border: 1px solid #16a34a; font-weight: 700; color: #111827;">
+                  <button onclick="quickUpdateQty({{ p.id }})" style="background: #16a34a; color: white; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 800; cursor: pointer;" title="Save Quantity">✓</button>
+                </div>
+              </td>
+              <td>{{ p.low_stock_threshold or 10 }}</td>
+              <td>
+                {% if p.expiry_date %}
+                  {{ p.expiry_date.strftime('%d %b %Y') }}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+              <td class="text-right" style="white-space: nowrap;">
+                <button id="avail-btn-{{ p.id }}" onclick="quickToggleStock({{ p.id }}, {{ 'true' if p.available else 'false' }})" style="padding: 6px 12px; border-radius: 8px; font-weight: 800; border: none; cursor: pointer; margin-right: 8px; background: {% if p.available %}#dcfce7; color: #166534{% else %}#fee2e2; color: #dc2626{% endif %};">
+                  {% if p.available %}In Stock{% else %}Out of Stock{% endif %}
+                </button>
+                <a href="{{ url_for('shop.edit_product', product_id=p.id) }}" class="link" style="font-weight: 700;">Edit</a>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="empty-row">
+                No products yet. Click <strong>“Add Product”</strong> to start.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    const salesLabels = {{ sales_labels | default([]) | tojson }};
+    const salesData   = {{ sales_amounts | default([]) | tojson }};
+    const profitData  = {{ sales_profits | default([]) | tojson }};
+    const stockLabels = {{ stock_labels | default([]) | tojson }};
+    const stockValues = {{ stock_values | default([]) | tojson }};
+  
+    if (salesLabels.length === 0) {
+      salesLabels.push("No Data");
+      salesData.push(0);
+      profitData.push(0);
+    }
+  
+    if (stockLabels.length === 0) {
+      stockLabels.push("No Stock");
+      stockValues.push(0);
+    }
+  </script>
+  
+
+  <script src="{{ url_for('static', filename='js/shop_dashboard.js') }}"></script>
+  
+  <script>
+    function updateOrderStatus(oid, status, phone, pname, price) {
+      fetch("/shop/api/order/update_status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_id: oid, status: status })
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          const b = document.getElementById("status-badge-" + oid);
+          if (b) {
+            b.innerText = status;
+            if (status === "Ready to Collect") { b.style.background = "#dcfce7"; b.style.color = "#166534"; }
+            else if (status === "Delivered") { b.style.background = "#e0e7ff"; b.style.color = "#3730a3"; }
+            else { b.style.background = "#fef3c7"; b.style.color = "#92400e"; }
+          }
+          const waBtn = document.getElementById("wa-btn-" + oid);
+          const targetPhone = phone || '919876543210';
+          const text = `Hi Customer, your Order #${oid} (${pname || 'Item'} - ₹${price || 0}) is now ${status}. Total Billing: ₹${price || 0}. Keep this message ready!`;
+          const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}`;
+          if (waBtn) waBtn.href = waUrl;
+          window.open(waUrl, '_blank');
+        }
+      });
+    }
+  </script>
+  
+  <script>
+    // Shop Voice Search Implementation
+    const shopVoiceBtn = document.getElementById('shop-voice-search-btn');
+    const shopSearchInput = document.getElementById('shop-search-input');
+    const shopLangSelect = document.getElementById('shop-voice-lang-select');
+
+    if (shopVoiceBtn) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = function() {
+                shopVoiceBtn.style.background = '#ef4444'; // Red recording hint
+                shopVoiceBtn.style.color = '#ffffff';
+                shopVoiceBtn.innerHTML = '<i class="fas fa-microphone-slash" style="margin:0;"></i>';
+                shopSearchInput.placeholder = "Listening in " + shopLangSelect.options[shopLangSelect.selectedIndex].text + "...";
+            };
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                shopSearchInput.value = transcript;
+                
+                // --- Phase 4: Local AI Intent Parsing (Shopkeeper) ---
+                const lowerT = transcript.toLowerCase();
+                if (lowerT.includes('add') || lowerT.includes('naya') || lowerT.includes('new') || lowerT.includes('kotha')) {
+                    alert('AI Router: "Add Product" intent recognized. Taking you to the Add screen...');
+                    window.location.href = "{{ url_for('shop.add_product') }}";
+                } else {
+                    // Default inventory search emulation
+                    alert(`Shop Inventory Search Triggered for: "${transcript}"`);
+                }
+            };
+
+            recognition.onerror = function(event) {
+                console.error("Speech recognition error", event.error);
+                shopSearchInput.placeholder = "Voice search failed.";
+                resetShopVoiceBtn();
+            };
+
+            recognition.onend = function() {
+                resetShopVoiceBtn();
+            };
+
+            function resetShopVoiceBtn() {
+                shopVoiceBtn.style.background = '#f3f4f6';
+                shopVoiceBtn.style.color = '#4b5563';
+                shopVoiceBtn.innerHTML = '<i class="fas fa-microphone" style="margin:0;"></i>';
+                if(!shopSearchInput.value) shopSearchInput.placeholder = "Search or say 'Add Product'";
+            }
+
+            shopVoiceBtn.addEventListener('click', () => {
+                recognition.lang = shopLangSelect.value;
+                recognition.start();
+            });
+        } else {
+            shopVoiceBtn.style.display = 'none';
+        }
+    }
+  </script>
+{% endblock %}

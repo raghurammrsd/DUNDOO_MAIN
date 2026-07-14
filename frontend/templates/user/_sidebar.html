@@ -1,0 +1,49 @@
+{% set current = active_page or 'dashboard' %}
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-title">User Dashboard</div>
+    <div class="sidebar-subtitle">Nearby Services</div>
+  </div>
+
+  <nav class="sidebar-nav">
+
+    <a class="nav-item {% if current == 'dashboard' %}active{% endif %}"
+       href="{{ url_for('user.dashboard') }}">
+      <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
+      <span>Dashboard</span>
+    </a>
+
+    
+    <a class="nav-item {% if current == 'search' %}active{% endif %}"
+       href="{{ url_for('user.dashboard') }}">
+      <span class="nav-icon"><i class="fas fa-shopping-bag"></i></span>
+      <span>Search Products</span>
+    </a>
+
+    <a class="nav-item {% if current == 'reels' %}active{% endif %}"
+       href="{{ url_for('user.reels') }}">
+       <span class="nav-icon"><i class="fas fa-video"></i></span>
+        <span>Reels</span>
+    </a>
+    <a class="nav-item {% if current == 'orders' %}active{% endif %}"
+       href="{{ url_for('user.dashboard') }}">
+      <span class="nav-icon"><i class="fas fa-shopping-cart"></i></span>
+      <span>Orders</span>
+    </a>
+
+    
+    <a class="nav-item {% if current == 'billing' %}active{% endif %}"
+       href="{{ url_for('user.dashboard') }}">
+      <span class="nav-icon"><i class="fas fa-credit-card"></i></span>
+      <span>Transactions</span>
+    </a>
+
+    
+    <a class="nav-item {% if current == 'settings' %}active{% endif %}"
+       href="{{ url_for('user.dashboard') }}">
+      <span class="nav-icon"><i class="fas fa-cog"></i></span>
+      <span>Settings</span>
+    </a>
+
+  </nav>

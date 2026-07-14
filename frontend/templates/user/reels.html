@@ -1,0 +1,27 @@
+{% extends "user/layout.html" %}
+{% block user_title %}Dundoo Reels - DUNDOO{% endblock %}
+{% block user_content %}
+<style>
+  body { overflow: hidden; background: #0f172a; }
+  .dundoo-main { padding: 0 !important; max-width: 100% !important; background: #0f172a !important; display: flex; justify-content: center; align-items: center; height: calc(100vh - 70px); overflow: hidden; }
+</style>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/reels.css') }}">
+
+<div class="app-reels-layout" style="width: 100%; height: 100%; background: #0f172a;">
+  <a href="{{ url_for('user.dashboard') }}" class="reels-back-btn">
+    <i class="fas fa-arrow-left"></i>
+  </a>
+
+  <!-- The scroll-snap container -->
+  <div class="reels-viewport" id="reels-viewport">
+      <!-- Reels get injected here via JS -->
+      <div class="reel-loading" id="reel-loader">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Loading fresh reels...</p>
+      </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/user_reels.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,520 @@
+{% extends 'user/layout.html' %}
+{% block user_title %}User Dashboard - DUNDOO{% endblock %}
+{% block user_content %}
+{% set active_page = 'dashboard' %}
+    
+    <div class="hero mb-4" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 2px solid #bbf7d0; border-radius: 24px; padding: 32px; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(22,163,74,0.1);">
+      <div class="hero-content" style="z-index: 2; max-width: 600px;">
+         <h1 class="hero-welcome" style="font-size: 32px; font-weight: 900; color: #115320; margin-bottom: 12px;"><span id="timeGreeting">Welcome</span>, <span>{{ current_user.username }}</span></h1>
+         <p style="font-size: 16px; color: #166534; font-weight: 600; line-height: 1.5; margin-bottom: 20px;">Discover verified local shops, fresh groceries, and instant self-pickup deals right around your neighborhood.</p>
+         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+           <div style="background: white; padding: 8px 16px; border-radius: 12px; font-weight: 800; color: #16a34a; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 8px;">
+             <i class="fas fa-store"></i> 100% Local Shops
+           </div>
+           <div style="background: white; padding: 8px 16px; border-radius: 12px; font-weight: 800; color: #16a34a; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 8px;">
+             <i class="fas fa-map-marker-alt"></i> Instant Self-Pickup
+           </div>
+           <div style="background: white; padding: 8px 16px; border-radius: 12px; font-weight: 800; color: #16a34a; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 8px;">
+             <i class="fas fa-bolt"></i> Zero Waiting
+           </div>
+         </div>
+      </div>
+      <div style="font-size: 100px; z-index: 1; user-select: none; filter: drop-shadow(0 15px 25px rgba(22,163,74,0.2)); color: #16a34a;">
+        <i class="fas fa-store-alt"></i>
+      </div>
+    </div>
+    
+    <!-- Location Banner -->
+    <div class="nav-location" onclick="requestLocation()" style="margin-bottom: 24px; display: inline-flex;">
+        <i class="fas fa-map-marker-alt text-primary"></i>
+        <span id="nav-location-text">Detecting Location...</span>
+    </div>
+
+    <!-- Stunning AI Smart Search Section -->
+    <div class="hero-search-section glass-panel-green tilt-effect" style="margin-bottom: 30px; transform-style: preserve-3d;">
+        <h2 class="hero-title text-success fw-bold" style="color: #0d5c25 !important; font-size: 24px;"><i class="fas fa-bolt text-warning"></i> AI Smart Search</h2>
+        <p style="color: #115320; font-size: 15px; margin-bottom: 20px;">Describe what you want naturally, and we'll find it nearby.</p>
+        <div class="ai-search-bar" style="background: #ffffff; border: 2px solid #c8e6c9; display: flex; align-items: center; padding: 0 8px; border-radius: 999px; position: relative;">
+            <i class="fas fa-search search-icon text-success" style="padding: 12px;"></i>
+            <input type="text" id="smart-search-input" class="ai-search-input text-success fw-bold" style="background: transparent; flex-grow: 1; border: none; outline: none;" placeholder="e.g., 'Milk', 'Bread', 'Apples'" autocomplete="off">
+            <div id="autocompleteDropdown" class="autocomplete-dropdown"></div>
+            
+            <select id="voice-lang-select" style="background: #f0fdf4; border: 1px solid #c8e6c9; border-radius: 8px; color: #115320; font-weight: 700; padding: 4px; margin-right: 8px; outline: none;">
+                <option value="en-IN">EN</option>
+                <option value="hi-IN">HI</option>
+                <option value="te-IN">TE</option>
+            </select>
+
+            <button id="voice-search-btn" class="action-btn" style="background: #e9f5ec; color: #16a34a; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-right: 8px; transition: all 0.2s;">
+                <i class="fas fa-microphone" style="margin:0;"></i>
+            </button>
+            
+            <button onclick="executeSmartSearch()" class="ai-search-btn premium-btn" style="border-radius: 999px; padding: 10px 24px;">Find Now</button>
+        </div>
+    </div>
+
+    <!-- Smart Categories -->
+    <div class="mb-5 d-none" id="categories-section" style="margin-top: 30px;">
+        <h3 class="section-heading mb-3">Shop by Category</h3>
+        <div class="smart-categories-wrapper" id="smart-categories-container">
+        </div>
+    </div>
+
+    <div class="mb-5" style="margin-top: 30px;">
+        <h3 class="section-heading mb-3" style="color: #115320;"><i class="fas fa-heart text-danger"></i> Favorite Shops</h3>
+        <div class="smart-categories-wrapper" id="favoriteShopsContainer" style="gap: 20px;">
+            <div class="skeleton-box" style="height: 120px; width: 240px;"></div>
+            <div class="skeleton-box" style="height: 120px; width: 240px;"></div>
+        </div>
+    </div>
+
+    <div class="mb-5" style="margin-top: 30px;">
+        <h3 class="section-heading mb-3" style="color: #115320;"><i class="fas fa-history text-primary"></i> Recently Viewed & Buy Again</h3>
+        <div class="smart-categories-wrapper" id="recentlyViewedContainer" style="gap: 20px;">
+        </div>
+    </div>
+
+    <!-- Daily Deals Section -->
+    <div class="mb-5" style="margin-top: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 class="section-heading m-0 text-primary"><i class="fas fa-tags text-warning"></i> Daily Deals</h3>
+        </div>
+        <div class="smart-categories-wrapper" id="daily-deals-container" style="gap: 20px;">
+            <div class="text-muted"><i class="fas fa-spinner fa-spin"></i> Loading Deals...</div>
+        </div>
+    </div>
+
+    <!-- Recommendations & Trending Bento layout -->
+    <div class="charts-row mb-5" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+        <div class="glass-panel-green tilt-effect" style="padding: 0; overflow: hidden; transform-style: preserve-3d; display: flex; flex-direction: column;">
+            <div style="background: rgba(255,255,255,0.6); padding: 16px 24px; font-weight: 800; border-bottom: 2px solid rgba(22, 163, 74, 0.1); font-size: 16px; color: #115320;">
+                <i class="fas fa-star text-warning" style="margin-right: 8px;"></i> Recommended For You
+            </div>
+            <div style="padding: 24px; flex-grow: 1;">
+                <div class="vertical-scroll-list" id="recommendations-container" style="gap: 16px;">
+                   <div class="text-center text-success fw-bold py-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="glass-panel-green tilt-effect" style="padding: 0; overflow: hidden; transform-style: preserve-3d; display: flex; flex-direction: column;">
+            <div style="background: rgba(255,255,255,0.6); padding: 16px 24px; font-weight: 800; border-bottom: 2px solid rgba(22, 163, 74, 0.1); font-size: 16px; color: #115320;">
+                <i class="fas fa-fire text-danger" style="margin-right: 8px;"></i> Trending Nearby
+            </div>
+            <div style="padding: 24px; flex-grow: 1;">
+                <div class="vertical-scroll-list" id="trending-container" style="gap: 16px;">
+                    <div class="text-center text-success fw-bold py-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Shop Discovery Section -->
+    <div class="mb-5">
+        <h3 class="section-heading mb-4">Discover Nearby Shops</h3>
+        <div class="shop-discovery-grid" id="nearby-shops-container">
+             <div class="text-center text-muted py-4 w-100"><i class="fas fa-spinner fa-spin"></i> Finding best shops near you...</div>
+        </div>
+    </div>
+
+<!-- Dundoo AI Chatbox -->
+<button class="floating-ai-btn" onclick="toggleChatbox()">
+    <i class="fas fa-robot"></i>
+</button>
+
+<div class="card shadow-soft" id="aiChatbox" style="display: none; position: fixed; bottom: 100px; right: 30px; width: 350px; height: 500px; z-index: 1000; flex-direction: column; overflow: hidden; border: 1px solid #e5e7eb; background: white; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.15);">
+    <div class="card-header" style="background: #116e38; color: white; padding: 16px 20px; display: flex; justify-content: space-between; font-weight: bold; font-size: 16px;">
+        <span><i class="fas fa-robot" style="margin-right:8px;"></i> Dundoo AI Assistant</span>
+        <button onclick="toggleChatbox()" style="background: transparent; border: none; color: white; cursor: pointer; font-size: 20px;">&times;</button>
+    </div>
+    <div class="card-body" id="chatboxBody" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 20px; background: #f9fafb;">
+        <div style="background: white; border: 1px solid #e5e7eb; color: #111827; padding: 12px 16px; border-radius: 16px; align-self: flex-start; max-width: 85%; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+            Hi! I'm Dundoo AI. 🤖<br>Looking for fresh milk or best prices? Just ask me!
+        </div>
+    </div>
+    <div style="padding: 16px; background: white; border-top: 1px solid #e5e7eb; display: flex; gap: 12px;">
+        <input type="text" id="aiMessageInput" placeholder="Ask me..." onkeypress="handleChatEnter(event)" style="flex: 1; border: 1px solid #d1d5db; border-radius: 999px; padding: 10px 16px; outline: none; font-size: 14px; background: #f9fafb;">
+        <button onclick="sendUserMessage()" style="background: #116e38; color: white; border: none; padding: 10px 20px; border-radius: 999px; cursor: pointer; font-weight: 600; font-size: 14px; transition: background 0.2s;">Send</button>
+    </div>
+</div>
+
+<script>
+let userLat = null;
+let userLng = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+    requestLocation();
+});
+
+function requestLocation() {
+    if (navigator.geolocation) {
+        document.getElementById('nav-location-text').innerText = "Identifying optimal nearby locations...";
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                userLat = pos.coords.latitude;
+                userLng = pos.coords.longitude;
+                document.getElementById('nav-location-text').innerHTML = "Location Found &bull; Exploring nearby";
+                fetchPlatformData();
+            },
+            (err) => {
+                document.getElementById('nav-location-text').innerText = "Location Error";
+                fetchPlatformData(); 
+            }
+        );
+    }
+}
+
+function fetchPlatformData() {
+    fetchCategories();
+    fetchDailyDeals();
+    fetchRecommendations();
+    fetchTrending();
+    fetchNearbyShops();
+}
+
+async function fetchCategories() {
+    try {
+        const res = await fetch("/user/api/smart_categories");
+        const data = await res.json();
+        const container = document.getElementById("smart-categories-container");
+        container.innerHTML = "";
+        
+        if (data.categories && data.categories.length > 0) {
+            document.getElementById("categories-section").classList.remove("d-none");
+        }
+        
+        const iconMap = {
+            "Groceries": "fa-shopping-basket text-primary", "Fruits": "fa-apple-alt text-danger", "Vegetables": "fa-carrot text-warning",
+            "Dairy": "fa-cheese text-warning", "Snacks": "fa-cookie-bite text-primary", "Beverages": "fa-coffee text-primary"
+        };
+
+        data.categories.forEach(cat => {
+            const iconClass = iconMap[cat] || "fa-shopping-basket text-primary";
+            container.innerHTML += `
+                <div class="category-pill shadow-soft">
+                    <div class="cat-icon bg-light">
+                        <i class="fas ${iconClass}"></i>
+                    </div>
+                    <span class="cat-name">${cat}</span>
+                </div>
+            `;
+        });
+    } catch (e) { }
+}
+
+async function fetchDailyDeals() {
+    try {
+        const res = await fetch("/user/api/daily_deals");
+        const data = await res.json();
+        const container = document.getElementById("daily-deals-container");
+        container.innerHTML = "";
+        
+        if (!data.deals || data.deals.length === 0) {
+            container.innerHTML = '<div class="text-muted p-3">No deals active right now.</div>';
+            return;
+        }
+
+        data.deals.forEach(deal => {
+            const imgHtml = deal.image_url 
+                ? `<img src="${deal.image_url}" class="card-img-top" alt="${deal.product_name}" style="transform: translateZ(20px);">`
+                : `<div class="card-img-placeholder" style="transform: translateZ(20px);"><i class="fas fa-boxes"></i></div>`;
+                
+            container.innerHTML += `
+                <div class="premium-product-card tilt-effect" style="background: #e9f5ec; border: 2px solid transparent; transform-style: preserve-3d;">
+                    <div class="discount-badge" style="transform: translateZ(30px);">${deal.discount_percentage}% OFF</div>
+                    ${imgHtml}
+                    <div class="card-body" style="background: rgba(255,255,255,0.7); transform: translateZ(10px);">
+                        <div class="card-title" style="color: #0d5c25; font-weight: 800;">${deal.product_name}</div>
+                        <div class="store-name text-muted mb-2"><i class="fas fa-store text-success"></i> ${deal.shop_name}</div>
+                            <div>
+                                <span style="font-weight: 900; color: #16a34a; font-size: 18px;">₹${deal.discounted_price}</span>
+                                <span style="font-size: 12px; text-decoration: line-through; color: #6b7280; margin-left: 4px;">₹${deal.original_price}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <button onclick="toggleWishlistGlobal('${deal.id}', '${deal.product_name}', '${deal.discounted_price}')" class="premium-btn-outline" style="padding: 6px 10px; border-radius: 8px;" title="Wishlist"><i class="fas fa-heart" style="color:#dc2626;"></i></button>
+                                <button onclick="addToCartGlobal('${deal.product_name}', '${deal.discounted_price}', '${deal.id}')" class="premium-btn" style="padding: 6px 12px; font-weight: 800;">+ ADD</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    } catch(e) { }
+}
+
+async function fetchList(endpoint, containerId) {
+    try {
+        const res = await fetch(endpoint + "?lat=" + userLat + "&lng=" + userLng);
+        const data = await res.json();
+        const arr = data.recommendations || data.trending || [];
+        const container = document.getElementById(containerId);
+        container.innerHTML = "";
+        
+        if(arr.length === 0) {
+             container.innerHTML = '<div class="text-muted py-3">No items found.</div>';
+             return;
+        }
+
+        arr.forEach(item => {
+             const imgSrc = item.image_url || (item.image_filename ? (item.image_filename.startsWith('http') || item.image_filename.startsWith('/') ? item.image_filename : `/static/uploads/products/${item.image_filename}`) : null);
+             const imgHtml = imgSrc
+                ? `<img src="${imgSrc}" class="v-img" style="border: 2px solid white;">` 
+                : `<div class="v-img-placeholder" style="border: 2px solid white; background: rgba(255,255,255,0.8); color: #16a34a;"><i class="fas fa-box"></i></div>`;
+             
+             container.innerHTML += `
+                 <div class="vertical-list-item tilt-effect" style="background: rgba(255,255,255,0.7); border-radius: 16px; border: 1px solid rgba(22, 163, 74, 0.1); transform-style: preserve-3d;">
+                    <div class="v-img-wrap" style="transform: translateZ(10px);">${imgHtml}</div>
+                    <div class="v-details" style="transform: translateZ(5px);">
+                        <div class="v-title" style="color: #111827; font-weight: 700;">${item.product_name}</div>
+                        <div class="v-meta text-muted" style="font-weight: 500;"><i class="fas fa-store text-success"></i> ${item.shop_name} &bull; <span style="color:#16a34a;">${item.distance_km}km</span></div>
+                    </div>
+                    <div style="text-align: right; display: flex; align-items: center; gap: 8px; transform: translateZ(15px);">
+                        <span style="font-weight: 900; font-size: 16px; color: #16a34a;">₹${parseFloat(item.price).toFixed(2)}</span>
+                        <button onclick="toggleWishlistGlobal('${item.id}', '${item.product_name}', '${item.price}')" class="premium-btn-outline" style="padding: 4px 8px; border-radius: 6px;" title="Wishlist"><i class="fas fa-heart" style="color:#dc2626;"></i></button>
+                        <button onclick="addToCartGlobal('${item.product_name}', '${item.price}', '${item.id}')" class="premium-btn" style="padding: 6px 12px; font-weight: 800; font-size: 12px;">+ ADD</button>
+                    </div>
+                 </div>
+             `;
+        });
+    } catch(e) { }
+}
+
+function fetchRecommendations() { fetchList("/user/api/recommendations", "recommendations-container"); }
+function fetchTrending() { fetchList("/user/api/trending", "trending-container"); }
+
+async function fetchNearbyShops() {
+    try {
+        const res = await fetch("/user/api/nearby_shops_discovery");
+        const data = await res.json();
+        const container = document.getElementById("nearby-shops-container");
+        container.innerHTML = "";
+        
+        if(!data.shops) return;
+        
+        data.shops.forEach(shop => {
+            container.innerHTML += `
+                <div class="shop-card shadow-soft">
+                    <div class="shop-banner"></div>
+                    <div class="shop-body">
+                        <h5 style="font-size: 18px; font-weight: 800; margin: 0 0 6px; color: #111827;">${shop.shop_name}</h5>
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; color: #4b5563; align-items: center; margin-bottom: 16px;">
+                            <span style="background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 999px; font-weight: 600;"><i class="fas fa-star" style="font-size: 11px;"></i> ${shop.rating}</span>
+                            <span><i class="fas fa-map-marker-alt text-primary"></i> ${shop.distance_km} km away</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="toggleFavoriteShop('${shop.shop_name}', '${shop.shop_name}')" class="premium-btn-outline" style="padding: 10px; width: 44px;" title="Follow Shop"><i class="fas fa-heart" style="color:#dc2626;"></i></button>
+                            <a href="/user/search?q=${encodeURIComponent(shop.shop_name)}" class="ai-search-btn" style="flex: 1; padding: 10px; font-size: 14px; text-align: center; text-decoration: none;">Visit Shop</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    } catch(e) {}
+}
+
+function toggleFavoriteShop(id, name) {
+    let favs = JSON.parse(localStorage.getItem("dundoo_fav_shops") || "[]");
+    if (favs.some(s => s.name === name)) {
+        favs = favs.filter(s => s.name !== name);
+        showToast("Unfollowed " + name);
+    } else {
+        favs.push({ id, name });
+        showToast("Following " + name);
+    }
+    localStorage.setItem("dundoo_fav_shops", JSON.stringify(favs));
+    renderFavoriteShops();
+}
+
+function renderFavoriteShops() {
+    const container = document.getElementById("favoriteShopsContainer");
+    if (!container) return;
+    const favs = JSON.parse(localStorage.getItem("dundoo_fav_shops") || "[]");
+    if (favs.length === 0) {
+        container.innerHTML = '<div style="color: #6b7280; padding: 10px 0;">No favorite shops added yet. Follow nearby shops!</div>';
+        return;
+    }
+    container.innerHTML = favs.map(s => `
+        <div class="glass-panel-green tilt-effect" style="padding: 16px; min-width: 200px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div style="font-weight: 800; color: #111827; font-size: 16px;"><i class="fas fa-store"></i> ${s.name}</div>
+            <div style="margin-top: 12px; display: flex; gap: 8px;">
+                <a href="/user/search?q=${encodeURIComponent(s.name)}" class="premium-btn" style="padding: 6px 12px; font-size: 12px; text-decoration: none; flex: 1; text-align: center;">Shop Now</a>
+                <button onclick="toggleFavoriteShop('${s.id}', '${s.name}')" style="background: #fee2e2; border: none; border-radius: 6px; color: #dc2626; cursor: pointer; padding: 0 8px;">×</button>
+            </div>
+        </div>
+    `).join("");
+}
+
+function renderRecentlyViewed() {
+    const container = document.getElementById("recentlyViewedContainer");
+    if (!container) return;
+    const recents = JSON.parse(localStorage.getItem("dundoo_recently_viewed") || "[]");
+    if (recents.length === 0) {
+        container.innerHTML = '<div style="color: #6b7280; padding: 10px 0;">No recently viewed items yet. Start shopping!</div>';
+        return;
+    }
+    container.innerHTML = recents.map(item => `
+        <div class="glass-panel-green tilt-effect" style="padding: 16px; min-width: 180px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="font-weight: 800; color: #111827; font-size: 15px;">${item.name}</div>
+                <div style="font-weight: 900; color: #16a34a; font-size: 16px; margin-top: 4px;">₹${item.price}</div>
+            </div>
+            <button onclick="addToCartGlobal('${item.name}', '${item.price}', '${item.id}')" class="premium-btn" style="margin-top: 12px; padding: 6px 12px; font-size: 12px;">Buy Again</button>
+        </div>
+    `).join("");
+}
+
+async function executeSmartSearch() {
+    const q = document.getElementById("smart-search-input").value;
+    if(!q) return;
+    window.location.href = "/user/search?q=" + encodeURIComponent(q);
+}
+
+// ---- Voice Search Implementation ----
+const voiceBtn = document.getElementById('voice-search-btn');
+const searchInput = document.getElementById('smart-search-input');
+const langSelect = document.getElementById('voice-lang-select');
+
+if (voiceBtn) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = function() {
+            voiceBtn.style.background = '#ef4444'; // Red to indicate recording
+            voiceBtn.style.color = '#ffffff';
+            voiceBtn.innerHTML = '<i class="fas fa-microphone-slash" style="margin:0;"></i>';
+            searchInput.placeholder = "Listening in " + langSelect.options[langSelect.selectedIndex].text + "...";
+        };
+
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            searchInput.value = transcript;
+            executeSmartSearch(); // Auto submit
+        };
+
+        recognition.onerror = function(event) {
+            console.error("Speech recognition error", event.error);
+            searchInput.placeholder = "Voice search failed. Try typing.";
+            resetVoiceBtn();
+        };
+
+        recognition.onend = function() {
+            resetVoiceBtn();
+            if(!searchInput.value) {
+                searchInput.placeholder = "e.g., 'मुझको सेब चाहिए'";
+            }
+        };
+
+        function resetVoiceBtn() {
+            voiceBtn.style.background = '#e9f5ec';
+            voiceBtn.style.color = '#16a34a';
+            voiceBtn.innerHTML = '<i class="fas fa-microphone" style="margin:0;"></i>';
+        }
+
+        voiceBtn.addEventListener('click', () => {
+            recognition.lang = langSelect.value;
+            recognition.start();
+        });
+    } else {
+        voiceBtn.style.display = 'none'; // Hide if browser doesn't support
+        console.warn("Speech Recognition API not supported in this browser.");
+    }
+}
+// -------------------------------------
+
+function toggleChatbox() {
+    const box = document.getElementById("aiChatbox");
+    box.style.display = (box.style.display === "flex") ? "none" : "flex";
+}
+
+function handleChatEnter(e) {
+    if (e.key === 'Enter') sendUserMessage();
+}
+
+async function sendUserMessage() {
+    const input = document.getElementById("aiMessageInput");
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    appendMessage(msg, "user");
+    input.value = "";
+    
+    // Add loading indicator
+    const body = document.getElementById("chatboxBody");
+    const loadingId = "loading-" + Date.now();
+    body.innerHTML += `<div id="${loadingId}" style="align-self: flex-start; margin-left: 10px; font-size: 12px; color: #6b7280;"><i class="fas fa-circle-notch fa-spin"></i> Dundoo AI is thinking...</div>`;
+    body.scrollTop = body.scrollHeight;
+
+    try {
+        const res = await fetch("/ai/user_chat", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ message: msg })
+        });
+        const data = await res.json();
+        
+        document.getElementById(loadingId).remove();
+        
+        if (data.reply) {
+            appendMessage(data.reply, "bot");
+        } else {
+            appendMessage("I couldn't process that. Try again.", "bot");
+        }
+    } catch (e) {
+        document.getElementById(loadingId).remove();
+    }
+}
+
+function appendMessage(text, sender) {
+    const body = document.getElementById("chatboxBody");
+    const isBot = sender === "bot";
+    const bg = isBot ? "white" : "#116e38";
+    const color = isBot ? "#111827" : "white";
+    const align = isBot ? "flex-start" : "flex-end";
+    const border = isBot ? "1px solid #e5e7eb" : "none";
+    
+    body.innerHTML += `<div style="background: ${bg}; color: ${color}; padding: 12px 16px; border-radius: 16px; align-self: ${align}; max-width: 85%; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); border: ${border};">${text}</div>`;
+    body.scrollTop = body.scrollHeight;
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+    const hr = new Date().getHours();
+    const greetElem = document.getElementById("timeGreeting");
+    if (greetElem) {
+        if (hr < 12) greetElem.innerText = "Good Morning";
+        else if (hr < 18) greetElem.innerText = "Good Afternoon";
+        else greetElem.innerText = "Good Evening";
+    }
+    renderFavoriteShops();
+    renderRecentlyViewed();
+
+    const searchInp = document.getElementById("smart-search-input");
+    const drop = document.getElementById("autocompleteDropdown");
+    let timer;
+    if (searchInp && drop) {
+        searchInp.addEventListener("input", function() {
+            clearTimeout(timer);
+            const q = this.value.trim();
+            if (!q) { drop.style.display = "none"; return; }
+            timer = setTimeout(() => {
+                fetch("/user/api/search/suggestions?q=" + encodeURIComponent(q))
+                .then(r => r.json())
+                .then(d => {
+                    if (d.suggestions && d.suggestions.length > 0) {
+                        drop.innerHTML = d.suggestions.map(s => `<a href="/user/search?q=${encodeURIComponent(s)}" class="autocomplete-item"><i class="fas fa-search" style="color:#16a34a;"></i> ${s}</a>`).join("");
+                        drop.style.display = "block";
+                    } else {
+                        drop.style.display = "none";
+                    }
+                });
+            }, 250);
+        });
+        document.addEventListener("click", (e) => {
+            if (!searchInp.contains(e.target) && !drop.contains(e.target)) drop.style.display = "none";
+        });
+    }
+});
+</script>
+{% endblock %}

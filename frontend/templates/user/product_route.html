@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row mt-4">
+  <div class="col-12 mb-3">
+    <div class="d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-3">
+        
+        {% if product.image_filename %}
+          <img
+            src="{{ product.image_url }}"
+            alt="{{ product.product_name }}"
+            style="width:80px;height:80px;object-fit:cover;border-radius:12px;"
+          >
+        {% endif %}
+
+        <div>
+          <h3 class="mb-1">{{ product.product_name }}</h3>
+          <h3 class="mb-1">{{ product.category }}</h3>
+          <h3 class="mb-1">{{ product.quantity}}</h3>
+          <h3 class="mb-1">{{ product.expiry}}</h3>
+          <h3 class="mb-1">{{ product.availability}}</h3>
+
+
+          <p class="text-muted mb-0 small">
+            {{ shop.shop_name }} – {{ shop.address }} ({{ shop.pincode }})
+          </p>
+
+          {% if product.description %}
+            <p class="small mt-1 mb-0">{{ product.description }}</p>
+          {% endif %}
+
+          <p class="small mb-0 mt-1">
+            <strong>Availability:</strong>
+            {% if product.available %}
+              <span class="text-success">In stock</span>
+            {% else %}
+              <span class="text-danger"> Unavailable</span>
+            {% endif %}
+
+            {% if product.price is not none %}
+              &nbsp;|&nbsp; <strong>Price:</strong>
+              ₹{{ "%.2f"|format(product.price|float) }}
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-secondary btn-sm rounded-3">
+        ← Back
+      </a>
+    </div>
+  </div>
+
+ 
+  <div class="col-12">
+    <div class="card shadow-sm rounded-4">
+      <div class="card-body">
+        <h5 class="card-title mb-2">Live route to the shop</h5>
+        <p class="text-muted small mb-2">
+          Allow location access to draw the route between you and the shop.
+        </p>
+
+        <div id="route-status" class="small mb-2 text-primary"></div>
+        <div id="route-map" style="height: 450px; border-radius: 16px; overflow: hidden;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+<script>
+  const routeStatus = document.getElementById("route-status");
+
+  const shopLat = {{ shop.latitude | tojson | safe }};
+  const shopLng = {{ shop.longitude | tojson | safe }};
+  const initialUserLat = {{ user_lat | default(None) | tojson | safe }};
+  const initialUserLng = {{ user_lng | default(None) | tojson | safe }};
+
+  let map, routingControl, userMarker, shopMarker;
+
+  function initMap(centerLat, centerLng) {
+    if (!map) {
+      map = L.map("route-map").setView([centerLat, centerLng], 14);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+      }).addTo(map);
+
+      if (shopLat !== null && shopLng !== null) {
+        shopMarker = L.marker([shopLat, shopLng])
+          .addTo(map)
+          .bindPopup("{{ shop.shop_name | e }}");
+      }
+    } else {
+      map.setView([centerLat, centerLng], 14);
+    }
+  }
+
+  function drawRoute(userLat, userLng) {
+    if (!map) initMap(userLat, userLng);
+
+    if (routingControl) map.removeControl(routingControl);
+
+    if (userMarker) {
+      userMarker.setLatLng([userLat, userLng]);
+    } else {
+      userMarker = L.marker([userLat, userLng]).addTo(map).bindPopup("You");
+    }
+
+    routingControl = L.Routing.control({
+      waypoints: [
+        L.latLng(userLat, userLng),
+        L.latLng(shopLat, shopLng),
+      ],
+      routeWhileDragging: false,
+      addWaypoints: false,
+      draggableWaypoints: false,
+      showAlternatives: false,
+      fitSelectedRoutes: true
+    }).addTo(map);
+
+    routeStatus.textContent = "Route loaded successfully.";
+  }
+
+  function detectUserLocationAndRoute() {
+    routeStatus.textContent = "Detecting your location…";
+
+    if (initialUserLat !== null && initialUserLng !== null) {
+      initMap(initialUserLat, initialUserLng);
+      drawRoute(initialUserLat, initialUserLng);
+      routeStatus.textContent = "Using last detected location.";
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      initMap(shopLat, shopLng);
+      routeStatus.textContent = "Location not supported. Showing shop only.";
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const ulat = pos.coords.latitude;
+        const ulng = pos.coords.longitude;
+        initMap(ulat, ulng);
+        drawRoute(ulat, ulng);
+      },
+      (err) => {
+        initMap(shopLat, shopLng);
+        routeStatus.textContent = "Location error: " + err.message;
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 7000,
+        maximumAge: 0
+      }
+    );
+  }
+
+  window.addEventListener("load", () => {
+    if (shopLat === null || shopLng === null) {
+      routeStatus.textContent = "Shop location not available.";
+      return;
+    }
+    detectUserLocationAndRoute();
+  });
+</script>
+
+{% endblock %}

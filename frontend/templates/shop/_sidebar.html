@@ -1,0 +1,72 @@
+{% set current = active_page or 'dashboard' %}
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-title">ShopKeeper</div>
+    <div class="sidebar-subtitle">Business Dashboard</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a class="nav-item {% if current == 'dashboard' %}active{% endif %}"
+       href="{{ url_for('shop.dashboard') }}">
+      <span class="nav-icon"><i class="fas fa-chart-line" style="width:20px;"></i></span>
+      <span>Dashboard</span>
+    </a>
+
+    <a class="nav-item {% if current == 'stock' %}active{% endif %}"
+       href="{{ url_for('shop.stock') }}">
+      <span class="nav-icon"><i class="fas fa-boxes" style="width:20px;"></i></span>
+      <span>Stock</span>
+    </a>
+
+    <a class="nav-item {% if current == 'record_sale' %}active{% endif %}"
+       href="{{ url_for('shop.record_sale') }}">
+      <span class="nav-icon"><i class="fas fa-cash-register" style="width:20px;"></i></span>
+      <span>Record Sale</span>
+    </a>
+
+    <a class="nav-item {% if current == 'billing' %}active{% endif %}"
+       href="{{ url_for('shop.billing') }}">
+      <span class="nav-icon"><i class="fas fa-file-invoice-dollar" style="width:20px;"></i></span>
+      <span>Billing & Invoices</span>
+    </a>
+
+    <a class="nav-item {% if current == 'reports' %}active{% endif %}"
+       href="{{ url_for('shop.reports') }}">
+      <span class="nav-icon"><i class="fas fa-chart-bar" style="width:20px;"></i></span>
+      <span>Reports</span>
+    </a>
+
+    <a class="nav-item {% if current == 'online_txns' %}active{% endif %}"
+       href="{{ url_for('shop.online_transactions') }}">
+      <span class="nav-icon"><i class="fas fa-money-check-alt" style="width:20px;"></i></span>
+      <span>Online Transactions</span>
+    </a>
+
+    <a class="nav-item {% if current == 'reels' %}active{% endif %}"
+       href="{{ url_for('shop.reels') }}">
+      <span class="nav-icon"><i class="fas fa-video" style="width:20px;"></i></span>
+      <span>Marketing</span>
+    </a>
+
+    <a class="nav-item {% if current == 'chatbot' %}active{% endif %}"
+       href="{{ url_for('shop.chatbot') }}">
+      <span class="nav-icon"><i class="fas fa-robot" style="width:20px;"></i></span>
+      <span>Chatbot</span>
+    </a>
+
+    <a class="nav-item {% if current == 'settings' %}active{% endif %}"
+       href="{{ url_for('shop.settings') }}">
+      <span class="nav-icon"><i class="fas fa-cog" style="width:20px;"></i></span>
+      <span>Settings</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <a class="nav-item danger" href="{{ url_for('shop.logout') }}">
+      <span class="nav-icon"><i class="fas fa-sign-out-alt" style="width:20px;"></i></span>
+      <span>Sign Out</span>
+    </a>
+    <small class="sidebar-copy">ShopKeeper Dashboard</small>
+  </div>
+</aside>

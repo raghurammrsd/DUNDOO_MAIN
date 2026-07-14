@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Edit Product{% endblock %}
+
+{% block content %}
+<div class="form-page">
+  <div class="form-card-auth">
+    <p class="form-eyebrow">Inventory</p>
+    <h1 class="form-title-main">Edit product</h1>
+    <p class="form-subtitle">
+      Update pricing, stock and alerts for this item.
+    </p>
+
+    <form method="post" enctype="multipart/form-data" class="form-grid">
+
+      <div class="form-group">
+        <label class="form-label" for="product_name">Product name</label>
+        <input
+          type="text"
+          id="product_name"
+          name="product_name"
+          class="form-input"
+          value="{{ product.product_name }}"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="category">Category</label>
+        <input
+          type="text"
+          id="category"
+          name="category"
+          class="form-input"
+          value="{{ product.category or '' }}"
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="description">Description</label>
+        <textarea
+          id="description"
+          name="description"
+          class="form-textarea"
+        >{{ product.description or '' }}</textarea>
+      </div>
+
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label" for="price">Selling price (₹)</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            id="price"
+            name="price"
+            class="form-input"
+            value="{{ product.price or 0 }}"
+          >
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="cost_price">Cost price (₹)</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            id="cost_price"
+            name="cost_price"
+            class="form-input"
+            value="{{ product.cost_price or 0 }}"
+          >
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="quantity">Current stock</label>
+          <input
+            type="number"
+            min="0"
+            id="quantity"
+            name="quantity"
+            class="form-input"
+            value="{{ product.quantity or 0 }}"
+          >
+        </div>
+      </div>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label" for="low_stock_threshold">Low-stock threshold</label>
+          <input
+            type="number"
+            min="0"
+            id="low_stock_threshold"
+            name="low_stock_threshold"
+            class="form-input"
+            value="{{ product.low_stock_threshold or 10 }}"
+          >
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="expiry_date">Expiry date</label>
+          <input
+            type="date"
+            id="expiry_date"
+            name="expiry_date"
+            class="form-input"
+            value="{{ product.expiry_date|default('', true) }}"
+          >
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Availability</label>
+        <label class="badge-input">
+          <input
+            type="checkbox"
+            name="available"
+            {% if product.available %}checked{% endif %}
+          >
+          <span>Product is available</span>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="image">Image</label>
+        <input type="file" id="image" name="image" class="form-input">
+        {% if product.display_image %}
+          <p class="form-help">Current: {{ product.display_image }}</p>
+          <img src="{{ product.image_url }}" style="max-width: 140px; border-radius: 12px; display:block; margin-top:6px;">
+        {% else %}
+          <p class="form-help">PNG / JPG · max 5 MB.</p>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="btn btn-primary form-primary-btn">
+        Save changes
+      </button>
+      <button
+        type="button"
+        class="btn btn-ghost form-secondary-btn"
+        onclick="window.location.href='{{ url_for('shop.stock') }}'"
+      >
+        Cancel
+      </button>
+
+    </form>
+  </div>
+</div>
+{% endblock %}

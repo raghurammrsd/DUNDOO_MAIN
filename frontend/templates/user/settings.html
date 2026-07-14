@@ -1,0 +1,54 @@
+{% extends "user/layout.html" %}
+{% block user_title %}Account Settings - DUNDOO{% endblock %}
+{% block user_content %}
+{% set active_page = 'settings' %}
+<div style="padding: 40px; background-color: #f0fdf4; min-height: 100vh;">
+  <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+    <h3 style="margin: 0; font-weight: 800; color: #115320; font-size: 24px;">Account Settings</h3>
+    <a href="{{ url_for('user.dashboard') }}" class="premium-btn-outline" style="text-decoration: none; padding: 8px 16px; border-radius: 999px; font-weight: 700;">
+      Back to Dashboard
+    </a>
+  </div>
+
+  <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+    
+    <!-- Profile Info Card -->
+    <div class="glass-panel-green tilt-effect" style="flex: 1; min-width: 300px; transform-style: preserve-3d; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px;">
+      <div style="width: 100px; height: 100px; border-radius: 50%; background: #ffffff; border: 4px solid rgba(22, 163, 74, 0.2); display: flex; align-items: center; justify-content: center; font-size: 40px; color: #16a34a; margin-bottom: 24px; transform: translateZ(20px);">
+        <i class="fas fa-user"></i>
+      </div>
+      <h2 style="font-weight: 800; color: #111827; margin: 0 0 8px 0; transform: translateZ(10px);">{{ user.username }}</h2>
+      <p style="color: #4b5563; margin: 0 0 4px 0; font-weight: 500;">{{ user.email }}</p>
+      <p style="color: #16a34a; margin: 0 0 24px 0; font-weight: 700;"><i class="fas fa-phone"></i> {{ user.phone }}</p>
+
+      <button class="premium-btn" style="transform: translateZ(15px); width: 100%; max-width: 250px;">Edit Profile</button>
+    </div>
+
+    <!-- Actions / Toggles Card -->
+    <div class="glass-panel-green tilt-effect" style="flex: 2; min-width: 400px; transform-style: preserve-3d;">
+      <h4 style="font-weight: 800; color: #115320; margin: 0 0 24px 0; font-size: 18px; border-bottom: 2px solid rgba(22,163,74,0.1); padding-bottom: 12px;">Preferences</h4>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: rgba(255,255,255,0.6); border-radius: 12px; margin-bottom: 16px;">
+        <span style="font-weight: 700; color: #111827;">Email Notifications</span>
+        <input type="checkbox" checked style="width: 20px; height: 20px; accent-color: #16a34a;">
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: rgba(255,255,255,0.6); border-radius: 12px; margin-bottom: 16px;">
+        <span style="font-weight: 700; color: #111827;">SMS Alerts</span>
+        <input type="checkbox" style="width: 20px; height: 20px; accent-color: #16a34a;">
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: rgba(255,255,255,0.6); border-radius: 12px; margin-bottom: 24px;">
+        <span style="font-weight: 700; color: #111827;">Location Auto-Detect</span>
+        <input type="checkbox" checked style="width: 20px; height: 20px; accent-color: #16a34a;">
+      </div>
+
+      <a href="{{ url_for('user.logout') }}" style="display: block; text-align: center; padding: 16px; border-radius: 12px; background: #ef4444; color: white; font-weight: 800; text-decoration: none; transform: translateZ(10px);">
+        <i class="fas fa-sign-out-alt"></i> Logout of Dundoo
+      </a>
+
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "user/layout.html" %}
+{% block user_title %}My Wishlist - DUNDOO{% endblock %}
+{% block user_content %}
+{% set active_page = 'wishlist' %}
+<div style="padding: 40px; background-color: #f0fdf4; min-height: 100vh;">
+  <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+    <h3 style="margin: 0; font-weight: 800; color: #115320; font-size: 28px;"><i class="fas fa-heart"></i> My Wishlist</h3>
+    <a href="{{ url_for('user.search') }}" class="premium-btn-outline" style="text-decoration: none; padding: 10px 20px; border-radius: 999px; font-weight: 700;">
+      <i class="fas fa-arrow-left"></i> Explore More Products
+    </a>
+  </div>
+
+  <div id="wishlistContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px;">
+    {% if wishlist_items %}
+      {% for product in wishlist_items %}
+      <div class="glass-panel-green tilt-effect" style="transform-style: preserve-3d; display: flex; flex-direction: column; justify-content: space-between; padding: 20px;">
+        <div style="transform: translateZ(15px);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <span style="background: #e9f5ec; color: #16a34a; font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 999px;">{{ product.category or 'General' }}</span>
+            <button onclick="toggleWishlistGlobal('{{ product.id }}', '{{ product.product_name|escape }}', '{{ product.price }}'); setTimeout(() => window.location.reload(), 500);" style="background: none; border: none; font-size: 20px; cursor: pointer;" title="Remove from Wishlist"><i class="fas fa-times" style="color:#ef4444;"></i></button>
+          </div>
+          <h4 style="margin: 12px 0 6px 0; font-weight: 800; color: #111827; font-size: 18px;">{{ product.product_name }}</h4>
+          <p style="margin: 0; color: #6b7280; font-size: 13px;">{{ product.description or 'Fresh local item' }}</p>
+        </div>
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed #c8e6c9; display: flex; justify-content: space-between; align-items: center; transform: translateZ(20px);">
+          <span style="font-weight: 900; color: #16a34a; font-size: 20px;">₹{{ "%.2f"|format(product.price or 0) }}</span>
+          <button onclick="addToCartGlobal('{{ product.product_name|escape }}', '{{ product.price or 0 }}', '{{ product.id }}'); toggleWishlistGlobal('{{ product.id }}', '{{ product.product_name|escape }}', '{{ product.price }}'); setTimeout(() => window.location.reload(), 500);" class="premium-btn" style="padding: 8px 16px; font-size: 13px;">Move to Cart</button>
+        </div>
+      </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const container = document.getElementById("wishlistContainer");
+  const localItems = JSON.parse(localStorage.getItem("dundoo_user_wishlist") || "[]");
+  {% if not wishlist_items %}
+  if (localItems.length > 0) {
+    container.innerHTML = localItems.map(item => `
+      <div class="glass-panel-green tilt-effect" style="transform-style: preserve-3d; display: flex; flex-direction: column; justify-content: space-between; padding: 20px;">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <span style="background: #e9f5ec; color: #16a34a; font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 999px;">Saved</span>
+            <button onclick="toggleWishlistGlobal('${item.id}', '${item.name}', '${item.price}'); setTimeout(() => window.location.reload(), 500);" style="background: none; border: none; font-size: 20px; cursor: pointer;" title="Remove"><i class="fas fa-times" style="color:#ef4444;"></i></button>
+          </div>
+          <h4 style="margin: 12px 0 6px 0; font-weight: 800; color: #111827; font-size: 18px;">${item.name}</h4>
+        </div>
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed #c8e6c9; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-weight: 900; color: #16a34a; font-size: 20px;">₹${item.price}</span>
+          <button onclick="addToCartGlobal('${item.name}', '${item.price}', '${item.id}'); toggleWishlistGlobal('${item.id}', '${item.name}', '${item.price}'); setTimeout(() => window.location.reload(), 500);" class="premium-btn" style="padding: 8px 16px; font-size: 13px;">Move to Cart</button>
+        </div>
+      </div>
+    `).join("");
+  } else {
+    container.innerHTML = `
+      <div class="glass-panel-green" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
+        <div style="font-size: 48px; color: #16a34a; margin-bottom: 16px;"><i class="fas fa-heart"></i></div>
+        <h4 style="color: #115320; font-weight: 800; font-size: 20px;">Your wishlist is empty.</h4>
+        <p style="color: #4b5563;">Save products you love to buy later!</p>
+        <a href="/user/search" class="premium-btn" style="margin-top: 16px; text-decoration: none; display: inline-block;">Explore Products</a>
+      </div>
+    `;
+  }
+  {% endif %}
+});
+</script>
+{% endblock %}

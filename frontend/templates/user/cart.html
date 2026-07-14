@@ -1,0 +1,170 @@
+{% extends "user/layout.html" %}
+{% block user_title %}My Cart - DUNDOO{% endblock %}
+{% block user_content %}
+<div style="padding: 40px; background-color: #f0fdf4; min-height: 100vh;">
+  <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+    <h3 style="margin: 0; font-weight: 800; color: #115320; font-size: 28px;"><i class="fas fa-shopping-cart"></i> My Shopping Cart</h3>
+    <a href="{{ url_for('user.search') }}" class="premium-btn-outline" style="text-decoration: none; padding: 10px 20px; border-radius: 999px; font-weight: 700;">
+      <i class="fas fa-arrow-left"></i> Continue Shopping
+    </a>
+  </div>
+
+  <div id="cartPageContainer" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start;">
+    <div id="cartItemsList" style="display: flex; flex-direction: column; gap: 16px;"></div>
+
+    <div class="glass-panel-green" style="padding: 24px; border-radius: 20px; position: sticky; top: 100px;">
+      <h4 style="margin: 0 0 16px 0; font-weight: 800; color: #115320; font-size: 20px; border-bottom: 1px solid #c8e6c9; padding-bottom: 12px;">Order Summary</h4>
+      
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 13px; font-weight: 700; color: #115320; margin-bottom: 6px;">Have a Coupon?</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="cartPageCouponInput" placeholder="e.g. WELCOME50" style="flex: 1; padding: 10px 14px; border-radius: 12px; border: 1px solid #86efac; outline: none; font-weight: 700; text-transform: uppercase;">
+          <button onclick="applyCartPageCoupon()" class="premium-btn" style="padding: 10px 16px; font-size: 13px;">Apply</button>
+        </div>
+        <div id="cartPageCouponMsg" style="font-size: 12px; font-weight: 700; margin-top: 6px;"></div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 15px; color: #374151;">
+        <span>Item Total:</span>
+        <span id="cartPageSubtotal" style="font-weight: 700;">₹0.00</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 15px; color: #374151;">
+        <span>Delivery Fee:</span>
+        <span style="font-weight: 700; color: #16a34a;">FREE</span>
+      </div>
+      <div id="cartPageDiscountRow" style="display: none; justify-content: space-between; margin-bottom: 12px; font-size: 15px; color: #dc2626;">
+        <span>Discount:</span>
+        <span id="cartPageDiscount" style="font-weight: 700;">-₹0.00</span>
+      </div>
+      
+      <div style="border-top: 1px dashed #c8e6c9; padding-top: 16px; margin-top: 16px; display: flex; justify-content: space-between; align-items: baseline;">
+        <span style="font-size: 18px; font-weight: 800; color: #115320;">Grand Total:</span>
+        <span id="cartPageTotal" style="font-size: 24px; font-weight: 900; color: #16a34a;">₹0.00</span>
+      </div>
+
+      <button onclick="checkoutCart()" class="premium-btn" style="width: 100%; margin-top: 24px; padding: 14px; font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;">
+        Proceed to Checkout
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let cartPageDiscountVal = 0;
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderCartPage();
+});
+
+function renderCartPage() {
+  const container = document.getElementById("cartItemsList");
+  if (!container) return;
+  
+  const localCart = typeof cartItems !== "undefined" ? cartItems : JSON.parse(localStorage.getItem("dundoo_user_cart") || "[]");
+  
+  if (localCart.length === 0) {
+    document.getElementById("cartPageContainer").style.gridTemplateColumns = "1fr";
+    container.innerHTML = `
+      <div class="glass-panel-green" style="text-align: center; padding: 80px 20px; border-radius: 20px;">
+        <div style="font-size: 64px; color: #16a34a; margin-bottom: 16px;"><i class="fas fa-shopping-bag"></i></div>
+        <h3 style="color: #115320; font-weight: 800; font-size: 24px; margin: 0 0 8px 0;">Your cart is currently empty</h3>
+        <p style="color: #4b5563; font-size: 15px; margin-bottom: 24px;">Explore hyperlocal shops and add fresh items to your cart!</p>
+        <a href="/user/search" class="premium-btn" style="text-decoration: none; padding: 14px 32px; font-size: 16px;">Start Shopping Now</a>
+      </div>
+    `;
+    const rightPanel = document.querySelector("#cartPageContainer > div:nth-child(2)");
+    if (rightPanel) rightPanel.style.display = "none";
+    return;
+  }
+
+  const rightPanel = document.querySelector("#cartPageContainer > div:nth-child(2)");
+  if (rightPanel) rightPanel.style.display = "block";
+  document.getElementById("cartPageContainer").style.gridTemplateColumns = "2fr 1fr";
+
+  let subtotal = 0;
+  container.innerHTML = localCart.map((item, idx) => {
+    const qty = parseInt(item.qty) || 1;
+    const price = parseFloat(item.price) || 0;
+    const itemTotal = qty * price;
+    subtotal += itemTotal;
+    
+    return `
+      <div class="glass-panel-green tilt-effect" style="transform-style: preserve-3d; display: flex; align-items: center; justify-content: space-between; padding: 20px; border-radius: 16px; background: white;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="width: 60px; height: 60px; border-radius: 12px; background: #f0fdf4; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            <i class="fas fa-box" style="color:#16a34a;"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0 0 4px 0; font-weight: 800; color: #111827; font-size: 18px;">${item.name}</h4>
+            <div style="font-weight: 700; color: #16a34a; font-size: 15px;">₹${price.toFixed(2)} each</div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 24px;">
+          <div style="display: flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 4px 8px; border-radius: 10px;">
+            <button onclick="updateCartPageQty(${idx}, -1)" style="border: none; background: white; width: 28px; height: 28px; border-radius: 6px; font-weight: 900; cursor: pointer; color: #16a34a; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">-</button>
+            <span style="font-weight: 800; width: 24px; text-align: center; color: #111827;">${qty}</span>
+            <button onclick="updateCartPageQty(${idx}, 1)" style="border: none; background: white; width: 28px; height: 28px; border-radius: 6px; font-weight: 900; cursor: pointer; color: #16a34a; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">+</button>
+          </div>
+          <div style="font-weight: 900; font-size: 18px; color: #111827; min-width: 80px; text-align: right;">₹${itemTotal.toFixed(2)}</div>
+          <button onclick="removeCartPageItem(${idx})" style="border: none; background: none; color: #ef4444; font-size: 18px; cursor: pointer;" title="Remove item"><i class="fas fa-trash-alt"></i></button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  const total = Math.max(0, subtotal - cartPageDiscountVal);
+  document.getElementById("cartPageSubtotal").innerText = "₹" + subtotal.toFixed(2);
+  document.getElementById("cartPageTotal").innerText = "₹" + total.toFixed(2);
+}
+
+function updateCartPageQty(idx, change) {
+  if (typeof cartItems !== "undefined") {
+    let q = parseInt(cartItems[idx].qty) || 1;
+    q += change;
+    if (q <= 0) {
+      cartItems.splice(idx, 1);
+    } else {
+      cartItems[idx].qty = q;
+    }
+    localStorage.setItem("dundoo_user_cart", JSON.stringify(cartItems));
+    renderCartDrawer();
+    renderCartPage();
+  }
+}
+
+function removeCartPageItem(idx) {
+  if (typeof cartItems !== "undefined") {
+    cartItems.splice(idx, 1);
+    localStorage.setItem("dundoo_user_cart", JSON.stringify(cartItems));
+    renderCartDrawer();
+    renderCartPage();
+  }
+}
+
+function applyCartPageCoupon() {
+  const code = (document.getElementById("cartPageCouponInput").value || "").trim().toUpperCase();
+  const msg = document.getElementById("cartPageCouponMsg");
+  const row = document.getElementById("cartPageDiscountRow");
+  
+  if (code === "WELCOME50" || code === "DUNDOO50" || code === "SAVE20") {
+    cartPageDiscountVal = 50;
+    msg.style.color = "#16a34a";
+    msg.innerText = "Coupon applied! ₹50 OFF.";
+    row.style.display = "flex";
+    document.getElementById("cartPageDiscount").innerText = "-₹50.00";
+    renderCartPage();
+  } else if (code === "FREEDEL") {
+    cartPageDiscountVal = 20;
+    msg.style.color = "#16a34a";
+    msg.innerText = "Free delivery discount applied!";
+    row.style.display = "flex";
+    document.getElementById("cartPageDiscount").innerText = "-₹20.00";
+    renderCartPage();
+  } else {
+    msg.style.color = "#dc2626";
+    msg.innerText = "Invalid or expired coupon code.";
+  }
+}
+</script>
+{% endblock %}

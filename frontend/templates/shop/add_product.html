@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}{{ "Edit Product" if is_edit else "Add Product" }}{% endblock %}
+
+{% block content %}
+<div class="form-page">
+  <div class="form-card-auth">
+    <p class="form-eyebrow">Inventory</p>
+
+    {% if is_edit %}
+      <h1 class="form-title-main">Edit product</h1>
+      <p class="form-subtitle">
+        Update pricing, stock and alerts for this product.
+      </p>
+    {% else %}
+      <h1 class="form-title-main">Add product</h1>
+      <p class="form-subtitle">
+        Create a new product with pricing, stock and alerts.
+      </p>
+    {% endif %}
+
+    {# IMPORTANT: no action → POST goes to the same URL
+       /shop/add-product for add
+       /shop/edit-product/<id> for edit #}
+    <form method="post" enctype="multipart/form-data" class="form-grid">
+
+      <!-- Product name -->
+      <div class="form-group">
+        <label class="form-label" for="product_name">Product name</label>
+        <input
+          type="text"
+          id="product_name"
+          name="product_name"
+          class="form-input"
+          placeholder="Kashmiri apples 1kg"
+          required
+          value="{% if is_edit %}{{ product.product_name }}{% endif %}"
+        >
+      </div>
+
+      <!-- Category -->
+      <div class="form-group">
+        <label class="form-label" for="category">Category</label>
+        <input
+          type="text"
+          id="category"
+          name="category"
+          class="form-input"
+          placeholder="Fruits, Groceries, Mobile…"
+          value="{% if is_edit %}{{ product.category or '' }}{% endif %}"
+        >
+      </div>
+
+      
+      <div class="form-group">
+        <label class="form-label" for="description">Description</label>
+        <textarea
+          id="description"
+          name="description"
+          class="form-textarea"
+          placeholder="Short description for users"
+        >{% if is_edit %}{{ product.description or '' }}{% endif %}</textarea>
+      </div>
+
+      
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label" for="price">Selling price (₹)</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            id="price"
+            name="price"
+            class="form-input"
+            value="{% if is_edit and product.price is not none %}{{ '%.2f'|format(product.price) }}{% endif %}"
+          >
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="cost_price">Cost price (₹)</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            id="cost_price"
+            name="cost_price"
+            class="form-input"
+            value="{% if is_edit and product.cost_price is not none %}{{ '%.2f'|format(product.cost_price) }}{% endif %}"
+          >
+          <p class="form-help">Used to calculate profit.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="quantity">
+            {% if is_edit %}Current stock{% else %}Opening stock{% endif %}
+          </label>
+          <input
+            type="number"
+            min="0"
+            id="quantity"
+            name="quantity"
+            class="form-input"
+            value="{% if is_edit %}{{ product.quantity or 0 }}{% endif %}"
+          >
+        </div>
+      </div>
+
+      
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label" for="low_stock_threshold">Low-stock threshold</label>
+          <input
+            type="number"
+            min="0"
+            id="low_stock_threshold"
+            name="low_stock_threshold"
+            class="form-input"
+            value="{% if is_edit %}{{ product.low_stock_threshold or 10 }}{% else %}10{% endif %}"
+          >
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="expiry_date">Expiry date</label>
+          <input
+            type="date"
+            id="expiry_date"
+            name="expiry_date"
+            class="form-input"
+            value="{% if is_edit and product.expiry_date %}{{ product.expiry_date.strftime('%Y-%m-%d') }}{% endif %}"
+          >
+        </div>
+      </div>
+
+      
+      <div class="form-group">
+        <label class="form-label">Availability</label>
+        <label class="badge-input">
+          <input
+            type="checkbox"
+            name="available"
+            {% if not is_edit or product.available %}checked{% endif %}
+          >
+          <span>Product is available</span>
+        </label>
+      </div>
+
+     
+      <div class="form-group">
+        <label class="form-label" for="image">Image</label>
+        <input type="file" id="image" name="image" class="form-input">
+        <p class="form-help">PNG / JPG · max 5 MB.</p>
+
+        {% if is_edit and product.display_image %}
+          <p class="form-help">Current image:</p>
+          <img
+            src="{{ product.image_url }}"
+            alt="Product image"
+            style="max-width: 140px; border-radius: 12px; display:block; margin-top:6px;"
+          >
+        {% endif %}
+      </div>
+
+      
+      <button type="submit" class="btn btn-primary form-primary-btn">
+        {% if is_edit %}Save changes{% else %}Add product{% endif %}
+      </button>
+      <button
+        type="button"
+        class="btn btn-ghost form-secondary-btn"
+        onclick="window.location.href='{{ url_for('shop.stock') }}'"
+      >
+        Cancel
+      </button>
+
+    </form>
+  </div>
+</div>
+{% endblock %}

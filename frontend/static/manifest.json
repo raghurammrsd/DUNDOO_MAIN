@@ -1,0 +1,21 @@
+{
+  "short_name": "Dundoo",
+  "name": "Dundoo Hyperlocal Marketplace",
+  "icons": [
+    {
+      "src": "/static/uploads/products/no-image.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/static/uploads/products/no-image.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/user/dashboard",
+  "background_color": "#f0fdf4",
+  "theme_color": "#16a34a",
+  "display": "standalone",
+  "orientation": "portrait"
+}

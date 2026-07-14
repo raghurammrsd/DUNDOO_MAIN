@@ -1,0 +1,66 @@
+{% extends 'user/layout.html' %}
+{% block user_title %}Recent Views - DUNDOO{% endblock %}
+{% block user_content %}
+<div class="saas-page-header">
+  <h1 class="saas-page-title">Recent Views</h1>
+  <button onclick="clearRecentViews()" class="premium-btn-outline" style="padding: 8px 16px; border-radius: 999px; font-size: 13px;">Clear History</button>
+</div>
+
+<div id="recent-views-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;"></div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  renderRecentViewsGrid();
+});
+
+function renderRecentViewsGrid() {
+  const container = document.getElementById("recent-views-grid");
+  if (!container) return;
+  const recents = JSON.parse(localStorage.getItem("dundoo_recently_viewed") || "[]");
+  if (recents.length === 0) {
+    container.style.gridTemplateColumns = "1fr";
+    container.innerHTML = `
+      <div class="saas-card" style="text-align: center; padding: 60px 20px;">
+        <div style="font-size: 48px; margin-bottom: 16px;">🕒</div>
+        <h3 style="margin: 0 0 8px; color: #111827;">No Recently Viewed Items</h3>
+        <p style="color: #6b7280; margin-bottom: 20px;">Browse products from nearby shops to build your viewing history.</p>
+        <a href="/user/search" class="premium-btn" style="text-decoration: none; padding: 12px 28px; border-radius: 999px;">Start Shopping</a>
+      </div>
+    `;
+    return;
+  }
+  container.style.gridTemplateColumns = "repeat(auto-fill, minmax(220px, 1fr))";
+  container.innerHTML = recents.map(p => `
+    <div class="saas-card tilt-effect" style="display: flex; flex-direction: column; justify-content: space-between; transform-style: preserve-3d; padding: 20px;">
+      <div>
+        <div style="height: 140px; display: flex; align-items: center; justify-content: center; background: #f8fafc; border-radius: 12px; margin-bottom: 16px; overflow: hidden;">
+          <img src="${getRecentImage(p)}" style="max-height: 120px; max-width: 100%; object-fit: contain;">
+        </div>
+        <div style="font-weight: 800; color: #111827; font-size: 16px; margin-bottom: 4px;">${p.name}</div>
+        <div style="font-weight: 900; color: #16a34a; font-size: 18px; margin-top: 8px;">₹${parseFloat(p.price || 0).toFixed(2)}</div>
+      </div>
+      <button onclick="addToCartGlobal('${p.name}', '${p.price}', '${p.id}')" class="premium-btn" style="width: 100%; margin-top: 16px; padding: 10px; font-weight: 800;">Add to Cart</button>
+    </div>
+  `).join("");
+}
+
+function getRecentImage(p) {
+  if (p.image_url && p.image_url !== "undefined" && p.image_url !== "null") return p.image_url;
+  let n = (p.name || "").toLowerCase();
+  if (n.includes("apple")) return "/static/uploads/products/1_1764921114_download_apple.jpeg";
+  if (n.includes("banana") || n.includes("kiwi") || n.includes("fruit")) return "/static/uploads/products/1_1764921155_download.jpeg";
+  if (n.includes("straw") || n.includes("berry")) return "/static/uploads/products/1_1764921217_download_1strwa.jpeg";
+  if (n.includes("chicken") || n.includes("meat") || n.includes("egg")) return "/static/uploads/products/2_1764922041_chicken.jpeg";
+  if (n.includes("mutton") || n.includes("fish")) return "/static/uploads/products/2_1764922116_mutton.jpeg";
+  if (n.includes("piz") || n.includes("cheese")) return "/static/uploads/products/2_1764922183_piz.jpeg";
+  if (n.includes("burger") || n.includes("snack") || n.includes("bread")) return "/static/uploads/products/2_1764923003_burger.jpeg";
+  if (n.includes("sugar") || n.includes("salt") || n.includes("rice") || n.includes("atta") || n.includes("flour") || n.includes("dal") || n.includes("oil") || n.includes("milk") || n.includes("curd")) return "/static/uploads/products/1_1783415548_sugar-shutterstock_615908132.jpg";
+  return "/static/uploads/products/1_1783415630_images_1.jpeg";
+}
+
+function clearRecentViews() {
+  localStorage.removeItem("dundoo_recently_viewed");
+  renderRecentViewsGrid();
+}
+</script>
+{% endblock %}

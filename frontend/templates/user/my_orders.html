@@ -1,0 +1,171 @@
+{% extends "user/layout.html" %}
+{% block user_title %}My Orders & Cart - DUNDOO{% endblock %}
+{% block user_content %}
+{% set active_page = 'orders' %}
+<div style="padding: 40px; background-color: #f0fdf4; min-height: 100vh;">
+  
+  <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+    <h3 style="margin: 0; font-weight: 800; color: #115320; font-size: 28px;">My Cart & Orders</h3>
+    <a href="{{ url_for('user.search') }}" class="premium-btn-outline" style="text-decoration: none; padding: 10px 20px; border-radius: 999px; font-weight: 700;">
+      <i class="fas fa-arrow-left"></i> Continue Shopping
+    </a>
+  </div>
+
+  <div style="display: flex; gap: 32px; flex-wrap: wrap;">
+    
+    <!-- Orders List -->
+    <div style="flex: 2; min-width: 300px;">
+      {% if orders %}
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          {% set ns = namespace(total=0) %}
+          {% for order in orders %}
+            {% if order.status == 'Placed' %}
+              {% set ns.total = ns.total + order.price|float %}
+            {% endif %}
+            
+            <div class="glass-panel-green tilt-effect" style="transform-style: preserve-3d; flex-direction: column; padding: 24px; margin-bottom: 20px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; transform: translateZ(10px);">
+                <div style="display: flex; align-items: center; gap: 20px;">
+                  <div style="width: 60px; height: 60px; border-radius: 12px; background: white; border: 2px solid #c8e6c9; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #16a34a;">
+                    <i class="fas fa-box-open"></i>
+                  </div>
+                  <div>
+                    <h4 style="margin: 0; font-weight: 800; color: #111827; font-size: 18px;">{{ order.product.product_name }}</h4>
+                    <p style="margin: 4px 0 0 0; color: #4b5563; font-weight: 500;"><i class="fas fa-store text-success"></i> From {{ order.product.shop.shop_name }}</p>
+                  </div>
+                </div>
+                
+                <div style="text-align: right;">
+                  <div style="font-weight: 900; color: #16a34a; font-size: 20px;">₹{{ "%.2f"|format(order.price) }}</div>
+                  <div style="margin-top: 6px;">
+                    {% if order.status == 'Placed' %}
+                      <span style="background: #fef08a; color: #854d0e; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 800;"><i class="fas fa-clock"></i> Order Confirmed</span>
+                    {% else %}
+                      <span style="background: #16a34a; color: white; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 800;"><i class="fas fa-check-circle"></i> {{ order.status }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Visual 4-Stage Stepper ($0 SaaS Polish) -->
+              <div style="margin-top: 24px; padding-top: 20px; border-top: 1px dashed #c8e6c9; display: flex; align-items: center; justify-content: space-between; position: relative; width: 100%; transform: translateZ(5px);">
+                <!-- Step 1 -->
+                <div style="display: flex; flex-direction: column; align-items: center; z-index: 1; background: #e9f5ec; padding: 0 8px;">
+                  <div style="width: 32px; height: 32px; border-radius: 50%; background: #16a34a; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; box-shadow: 0 2px 6px rgba(22,163,74,0.3);">✓</div>
+                  <span style="font-size: 12px; font-weight: 800; color: #115320; margin-top: 6px;">Placed</span>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; z-index: 1; background: #e9f5ec; padding: 0 8px;">
+                  <div style="width: 32px; height: 32px; border-radius: 50%; background: {% if order.status in ['Accepted', 'Packing', 'Ready to Collect', 'Out for Delivery', 'Delivered'] %}#16a34a; color: white;{% else %}#ffffff; color: #16a34a; border: 2px solid #16a34a;{% endif %} display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800;">{% if order.status in ['Accepted', 'Packing', 'Ready to Collect', 'Out for Delivery', 'Delivered'] %}✓{% else %}2{% endif %}</div>
+                  <span style="font-size: 12px; font-weight: {% if order.status in ['Accepted', 'Packing', 'Ready to Collect', 'Out for Delivery', 'Delivered'] %}800{% else %}600{% endif %}; color: {% if order.status in ['Accepted', 'Packing', 'Ready to Collect', 'Out for Delivery', 'Delivered'] %}#115320{% else %}#6b7280{% endif %}; margin-top: 6px;">Packing</span>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; z-index: 1; background: #e9f5ec; padding: 0 8px;">
+                  <div style="width: 32px; height: 32px; border-radius: 50%; background: {% if order.status in ['Ready to Collect', 'Out for Delivery', 'Delivered'] %}#16a34a; color: white;{% else %}#ffffff; color: #16a34a; border: 2px solid #16a34a;{% endif %} display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800;">{% if order.status in ['Ready to Collect', 'Out for Delivery', 'Delivered'] %}✓{% else %}3{% endif %}</div>
+                  <span style="font-size: 12px; font-weight: {% if order.status in ['Ready to Collect', 'Out for Delivery', 'Delivered'] %}800{% else %}600{% endif %}; color: {% if order.status in ['Ready to Collect', 'Out for Delivery', 'Delivered'] %}#115320{% else %}#6b7280{% endif %}; margin-top: 6px;">Ready / Way</span>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; z-index: 1; background: #e9f5ec; padding: 0 8px;">
+                  <div style="width: 32px; height: 32px; border-radius: 50%; background: {% if order.status == 'Delivered' %}#16a34a; color: white;{% else %}#ffffff; color: #16a34a; border: 2px solid #16a34a;{% endif %} display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800;">{% if order.status == 'Delivered' %}✓{% else %}4{% endif %}</div>
+                  <span style="font-size: 12px; font-weight: {% if order.status == 'Delivered' %}800{% else %}600{% endif %}; color: {% if order.status == 'Delivered' %}#115320{% else %}#6b7280{% endif %}; margin-top: 6px;">Delivered</span>
+                </div>
+                <!-- Line -->
+                <div style="position: absolute; top: 16px; left: 24px; right: 24px; height: 3px; background: #c8e6c9; z-index: 0;"></div>
+              </div>
+
+              <div style="background: #ffffff; border: 1px solid #c8e6c9; border-radius: 12px; padding: 12px 16px; margin-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; width: 100%; box-sizing: border-box;">
+                <span style="font-size: 14px; font-weight: 800; color: #115320;"><i class="fas fa-bolt" style="color: #facc15; margin-right: 6px;"></i> Hyperlocal Express Delivery</span>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <button onclick="addToCartGlobal('{{ order.product.product_name|escape }}', '{{ order.price }}', '{{ order.product_id }}')" class="premium-btn" style="padding: 6px 14px; font-size: 12px;">
+                    Buy Again
+                  </button>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="glass-panel-green" style="text-align: center; padding: 60px 20px;">
+          <div style="font-size: 48px; color: #16a34a; margin-bottom: 16px;"><i class="fas fa-shopping-basket"></i></div>
+          <h4 style="color: #115320; font-weight: 800; font-size: 20px;">Your cart is empty.</h4>
+          <p style="color: #4b5563;">Discover amazing products from nearby shops!</p>
+          <a href="{{ url_for('user.dashboard') }}" class="premium-btn" style="margin-top: 16px; text-decoration: none; display: inline-block;">Start Exploring</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Checkout Sidebar -->
+    {% if orders %}
+    <div style="flex: 1; min-width: 300px; max-width: 400px;">
+      <div class="glass-panel-green tilt-effect" style="transform-style: preserve-3d; position: sticky; top: 20px;">
+        <h4 style="margin: 0 0 20px 0; font-weight: 800; color: #115320; font-size: 20px; border-bottom: 2px solid rgba(22,163,74,0.1); padding-bottom: 12px;">Order Summary</h4>
+        
+        <div style="display: flex; justify-content: space-between; margin-bottom: 16px; color: #4b5563; font-weight: 600;">
+          <span>Subtotal</span>
+          <span>₹{{ "%.2f"|format(ns.total) if ns else "0.00" }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 16px; color: #4b5563; font-weight: 600;">
+          <span>Delivery Fee</span>
+          <span style="color: #16a34a;">FREE</span>
+        </div>
+        
+        <hr style="border: 0; border-top: 2px dashed rgba(22,163,74,0.2); margin: 20px 0;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; transform: translateZ(10px);">
+          <span style="font-weight: 800; color: #111827; font-size: 18px;">Total to Pay</span>
+          <span style="font-weight: 900; color: #16a34a; font-size: 24px;">₹{{ "%.2f"|format(ns.total) if ns else "0.00" }}</span>
+        </div>
+
+        <button id="checkoutBtn" class="premium-btn" style="width: 100%; font-size: 18px; padding: 14px; text-transform: uppercase; letter-spacing: 0.5px; transform: translateZ(20px);">
+          <i class="fas fa-lock"></i> Pay Securely
+        </button>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  const checkoutBtn = document.getElementById("checkoutBtn");
+  if(checkoutBtn) {
+    checkoutBtn.onclick = function () {
+      checkoutBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Processing...';
+      fetch("{{ url_for('user.create_payment') }}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": "{{ csrf_token() if csrf_token else '' }}"
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        var options = {
+          "key": "{{ config['RAZORPAY_KEY_ID'] }}",
+          "amount": data.amount,
+          "currency": "INR",
+          "name": "DUNDOO",
+          "description": "Order Payment",
+          "order_id": data.order_id,
+          "handler": function (response) {
+            window.location.href = "/user/payment-success";
+          },
+          "theme": {
+            "color": "#16a34a"
+          }
+        };
+
+        var rzp = new Razorpay(options);
+        rzp.open();
+        
+        rzp.on('payment.failed', function (response){
+          checkoutBtn.innerHTML = '<i class="fas fa-lock"></i> Pay Securely';
+          alert("Payment Failed. Try again.");
+        });
+      })
+      .catch(err => {
+        alert("Failed to initiate payment. Check configuration.");
+        checkoutBtn.innerHTML = '<i class="fas fa-lock"></i> Pay Securely';
+      });
+    };
+  }
+</script>
+{% endblock %}
