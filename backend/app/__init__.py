@@ -56,7 +56,12 @@ def create_app():
 
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        try:
+            return User.query.get(int(user_id))
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error loading user {user_id}: {e}")
+            return None
 
     
     from app.main.routes import main_bp

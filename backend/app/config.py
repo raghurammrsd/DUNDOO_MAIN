@@ -24,14 +24,12 @@ class Config:
         elif _db_url.startswith("postgresql://") and "+psycopg" not in _db_url and "+psycopg2" not in _db_url:
             _db_url = _db_url.replace("postgresql://", "postgresql+psycopg://", 1)
 
+    from sqlalchemy.pool import NullPool
     SQLALCHEMY_DATABASE_URI = _db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
+        "poolclass": NullPool,
         "pool_pre_ping": True,
-        "pool_recycle": 180,
-        "pool_size": 5,
-        "max_overflow": 15,
-        "pool_timeout": 30,
     }
 
     # Cloudinary Config
