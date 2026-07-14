@@ -17,12 +17,16 @@ class Config:
 
     _db_url = os.getenv("DATABASE_URL")
     if not _db_url:
-        _db_url = f"postgresql+psycopg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=require&channel_binding=require"
+        _db_url = f"postgresql+psycopg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=require"
     else:
         if _db_url.startswith("postgres://"):
             _db_url = _db_url.replace("postgres://", "postgresql+psycopg://", 1)
         elif _db_url.startswith("postgresql://") and "+psycopg" not in _db_url and "+psycopg2" not in _db_url:
             _db_url = _db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+        if "&channel_binding=require" in _db_url:
+            _db_url = _db_url.replace("&channel_binding=require", "")
+        if "?channel_binding=require" in _db_url:
+            _db_url = _db_url.replace("?channel_binding=require", "?sslmode=require")
 
     from sqlalchemy.pool import NullPool
     SQLALCHEMY_DATABASE_URI = _db_url
@@ -30,6 +34,10 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {
         "poolclass": NullPool,
         "pool_pre_ping": True,
+        "connect_args": {
+            "connect_timeout": 10,
+            "options": "-c statement_timeout=30000"
+        }
     }
 
     # Cloudinary Config

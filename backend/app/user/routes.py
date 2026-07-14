@@ -52,6 +52,7 @@ def register():
             ).first()
         except Exception as e:
             db.session.rollback()
+            db.session.remove()
             if hasattr(db, "engine"):
                 db.engine.dispose()
             existing_username = User.query.filter(
@@ -68,6 +69,7 @@ def register():
             ).first()
         except Exception as e:
             db.session.rollback()
+            db.session.remove()
             if hasattr(db, "engine"):
                 db.engine.dispose()
             existing_email = User.query.filter(
