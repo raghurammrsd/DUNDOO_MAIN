@@ -46,17 +46,34 @@ def register():
             return redirect(url_for("user.register"))
 
         
-        existing_username = User.query.filter(
-            func.lower(User.username) == username.lower()
-        ).first()
+        try:
+            existing_username = User.query.filter(
+                func.lower(User.username) == username.lower()
+            ).first()
+        except Exception as e:
+            db.session.rollback()
+            if hasattr(db, "engine"):
+                db.engine.dispose()
+            existing_username = User.query.filter(
+                func.lower(User.username) == username.lower()
+            ).first()
+
         if existing_username:
             flash("Username already exists.", "danger")
             return redirect(url_for("user.register"))
 
-        
-        existing_email = User.query.filter(
-            func.lower(User.email) == email.lower()
-        ).first()
+        try:
+            existing_email = User.query.filter(
+                func.lower(User.email) == email.lower()
+            ).first()
+        except Exception as e:
+            db.session.rollback()
+            if hasattr(db, "engine"):
+                db.engine.dispose()
+            existing_email = User.query.filter(
+                func.lower(User.email) == email.lower()
+            ).first()
+
         if existing_email:
             flash("This email is already used for another user account.", "danger")
             return redirect(url_for("user.register"))

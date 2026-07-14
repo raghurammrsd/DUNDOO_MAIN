@@ -1,7 +1,8 @@
-from flask import Flask
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
+from sqlalchemy import text
 from .config import Config
 from dotenv import load_dotenv
 import os
@@ -37,6 +38,23 @@ def create_app():
     db.init_app(app)
     Migrate(app, db)
     login_manager.init_app(app)
+
+    @app.before_request
+    def ensure_db_connection():
+        if request.path.startswith("/static/") or request.path == "/favicon.ico":
+            return
+        try:
+            db.session.execute(text("SELECT 1"))
+        except Exception as e:
+            app.logger.warning(f"Connection dropped or stale ({e}). Resetting session & engine...")
+            db.session.rollback()
+            db.session.remove()
+            if hasattr(db, "engine"):
+                db.engine.dispose()
+            try:
+                db.session.execute(text("SELECT 1"))
+            except Exception as e2:
+                app.logger.error(f"Database pre-request recovery failed: {e2}")
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):

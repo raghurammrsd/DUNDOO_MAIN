@@ -111,11 +111,21 @@ def login():
         pincode = request.form.get("pincode")
         email = request.form.get("email")
 
-        shop = Shopkeeper.query.filter(
-            func.lower(Shopkeeper.shop_name)==shop_name.lower(),
-            Shopkeeper.pincode==pincode,
-            func.lower(Shopkeeper.email)==email.lower()
-        ).first()
+        try:
+            shop = Shopkeeper.query.filter(
+                func.lower(Shopkeeper.shop_name)==shop_name.lower(),
+                Shopkeeper.pincode==pincode,
+                func.lower(Shopkeeper.email)==email.lower()
+            ).first()
+        except Exception as e:
+            db.session.rollback()
+            if hasattr(db, "engine"):
+                db.engine.dispose()
+            shop = Shopkeeper.query.filter(
+                func.lower(Shopkeeper.shop_name)==shop_name.lower(),
+                Shopkeeper.pincode==pincode,
+                func.lower(Shopkeeper.email)==email.lower()
+            ).first()
 
         if not shop:
             flash("Invalid credentials", "danger")
