@@ -34,6 +34,7 @@ class Shopkeeper(db.Model):
     longitude = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     password_hash = db.Column(db.String(255), nullable=True)
+    whatsapp_number = db.Column(db.String(20), nullable=True)
 
     
 
@@ -268,4 +269,19 @@ class Review(db.Model):
         if self.image.startswith("http://") or self.image.startswith("https://") or self.image.startswith("/"):
             return self.image
         return f"/static/uploads/reviews/{self.image}"
+
+
+class WhatsAppMessage(db.Model):
+    __tablename__ = "whatsapp_messages"
+
+    id = db.Column(db.Integer, primary_key=True)
+    shop_id = db.Column(db.Integer, db.ForeignKey("shopkeepers.id"), nullable=True)
+    recipient_number = db.Column(db.String(30), nullable=False)
+    subject = db.Column(db.String(255), nullable=False)
+    message_body = db.Column(db.Text, nullable=False)
+    message_type = db.Column(db.String(50), default="alert")
+    status = db.Column(db.String(50), default="SENT")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    shop = db.relationship("Shopkeeper", backref=db.backref("whatsapp_messages", lazy=True))
 

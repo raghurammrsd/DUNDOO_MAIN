@@ -15,13 +15,14 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
 from app import db
-from app.models import Shopkeeper, Product, Sale, StockMovement, Expense, OnlineTransaction, Order
+from app.models import Shopkeeper, Product, Sale, StockMovement, Expense, OnlineTransaction, Order, WhatsAppMessage
 import razorpay
 from app.otp_utils import (
     is_valid_email, start_otp_flow, verify_otp,
     get_current_record, send_inventory_email
 )
 from app.utils.storage import upload_image
+from app.whatsapp_utils import send_whatsapp_alert
 
 shop_bp = Blueprint("shop", __name__, url_prefix="/shop")
 def get_razorpay_client():
@@ -35,7 +36,17 @@ def _get_logged_in_shop():
     sid = session.get("shop_id")
     if not sid:
         return None
-    return Shopkeeper.query.get(sid)
+    try:
+        return Shopkeeper.query.get(sid)
+    except Exception as e:
+        db.session.rollback()
+        db.session.remove()
+        if hasattr(db, "engine"):
+            db.engine.dispose()
+        try:
+            return Shopkeeper.query.get(sid)
+        except Exception:
+            return None
 
 
 def _send_inventory_alert_email(shop, subject, lines):
@@ -43,9 +54,9 @@ def _send_inventory_alert_email(shop, subject, lines):
         return
     body = "\n".join(lines)
     try:
-        send_inventory_email(shop.email, subject, body)
+        send_whatsapp_alert(shop, subject, body, message_type="inventory")
     except Exception as e:
-        current_app.logger.error("Inventory mail error: %s", e)
+        current_app.logger.error("Inventory WhatsApp error: %s", e)
 
 
 @shop_bp.route("/register", methods=["GET", "POST"])
@@ -56,6 +67,7 @@ def register():
         shopkeeper_name = request.form.get("shopkeeper_name", "").strip()
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "").strip()
+        whatsapp_number = request.form.get("whatsapp_number", "").strip()
         address = request.form.get("address", "").strip()
         pincode = request.form.get("pincode", "").strip()
         landmark = request.form.get("landmark", "").strip()
@@ -63,7 +75,7 @@ def register():
         lat_raw = request.form.get("latitude", "").strip()
         lng_raw = request.form.get("longitude", "").strip()
 
-        if not all([shop_name, shopkeeper_name, email, password, address, pincode]):
+        if not all([shop_name, shopkeeper_name, email, password, whatsapp_number, address, pincode]):
             flash("All fields are required.", "danger")
             return redirect(url_for("shop.register"))
 
@@ -87,15 +99,22 @@ def register():
             landmark=landmark or None,
             latitude=latitude,
             longitude=longitude,
-            password_hash=generate_password_hash(password)
+            password_hash=generate_password_hash(password),
+            whatsapp_number=whatsapp_number
         )
 
         try:
             db.session.add(new_shop)
             db.session.commit()
-            start_otp_flow("shop_register", email, shopkeeper_name, {"shop_id": new_shop.id})
-            flash("We sent a verification code to your email.", "info")
-            return redirect(url_for("shop.verify_otp_view"))
+            send_whatsapp_alert(
+                new_shop,
+                "🎉 Official DUNDOO WhatsApp Member Verification",
+                f"Hello {shopkeeper_name}!\nYour shop '{shop_name}' is now registered as an official DUNDOO WhatsApp automated member.\nAll inventory warnings, order notifications, and member alerts will arrive here automatically!",
+                message_type="welcome"
+            )
+            session["shop_id"] = new_shop.id
+            flash("Shop registered! DUNDOO automated WhatsApp member alert has been dispatched.", "success")
+            return redirect(url_for("shop.dashboard"))
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Error registering shop: {e}")
@@ -314,6 +333,7 @@ def dashboard():
 
    
     orders = Order.query.filter_by(shop_id=shop.id).order_by(Order.created_at.desc()).limit(15).all()
+    whatsapp_messages = WhatsAppMessage.query.filter_by(shop_id=shop.id).order_by(WhatsAppMessage.created_at.desc()).limit(20).all()
 
     return render_template(
         "shop/dashboard.html",
@@ -327,6 +347,7 @@ def dashboard():
         stock_values=stock_values,
         online_revenue=online_revenue,
         orders=orders,
+        whatsapp_messages=whatsapp_messages,
         active_page="dashboard",
     )
 
@@ -343,13 +364,12 @@ def update_order_status():
         return jsonify({"success": False, "message": "Order not found"})
     order.status = status
     db.session.commit()
-    if order.user and order.user.email:
-        try:
-            subj = f"Update on your Dundoo Order #{order.id}"
-            body = f"Hello {order.user.username},\n\nYour order for {order.product.product_name} is now: {status}.\n\nThank you for shopping nearby with Dundoo!"
-            send_inventory_email(order.user.email, subj, body)
-        except Exception:
-            pass
+    try:
+        subj = f"Order #{order.id} Status Updated: {status}"
+        body = f"Hello {shop.shopkeeper_name},\nYour shop '{shop.shop_name}' has updated Order #{order.id} status to: *{status}*.\nCustomer ({order.user.username if order.user else 'User'}) has been notified automatically.\n\nDUNDOO WhatsApp Member Automation"
+        send_whatsapp_alert(shop, subj, body, message_type="order")
+    except Exception as e:
+        current_app.logger.error(f"WhatsApp order status alert error: {e}")
     return jsonify({"success": True, "status": status})
 
 from sqlalchemy import func

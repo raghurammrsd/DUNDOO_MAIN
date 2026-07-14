@@ -25,6 +25,7 @@ from app.otp_utils import (
     verify_otp,
     get_current_record,
 )
+from app.whatsapp_utils import send_whatsapp_alert
 
 user_bp = Blueprint("user", __name__, url_prefix="/user")
 
@@ -446,6 +447,18 @@ def add_to_cart(product_id):
     db.session.add(order)
     db.session.commit()
 
+    try:
+        shop = Shopkeeper.query.get(order.shop_id) if order.shop_id else None
+        if shop:
+            send_whatsapp_alert(
+                shop,
+                f"🎉 New Order #{order.id} Placed!",
+                f"Customer '{current_user.username}' just placed a new order!\n• Item: {product.product_name}\n• Price: ₹{order.price}\n• Qty: {order.quantity}\n\nLog in to your DUNDOO Dashboard to accept right away!",
+                message_type="order"
+            )
+    except Exception as e:
+        current_app.logger.error(f"WhatsApp order alert error: {e}")
+
     print("ORDER SAVED")
 
     return redirect(url_for("user.my_orders"))
@@ -480,7 +493,19 @@ def checkout_cart_api():
                 status="Placed"
             )
             db.session.add(order)
+            db.session.flush()
             created_count += 1
+            try:
+                shop = Shopkeeper.query.get(product.shopkeeper_id) if product.shopkeeper_id else None
+                if shop:
+                    send_whatsapp_alert(
+                        shop,
+                        f"🛒 New Cart Order #{order.id} Placed!",
+                        f"Customer '{current_user.username}' placed an order from their cart!\n• Item: {product.product_name}\n• Price: ₹{order.price}\n• Qty: {order.quantity}\n\nDUNDOO Automated Order System",
+                        message_type="order"
+                    )
+            except Exception:
+                pass
     if created_count > 0:
         db.session.commit()
     return jsonify({"success": True, "count": created_count})

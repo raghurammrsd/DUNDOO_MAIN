@@ -45,8 +45,10 @@ def create_app():
     with app.app_context():
         try:
             db.session.execute(text("ALTER TABLE shopkeepers ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255);"))
+            db.session.execute(text("ALTER TABLE shopkeepers ADD COLUMN IF NOT EXISTS whatsapp_number VARCHAR(20);"))
+            db.create_all()
             db.session.commit()
-        except Exception:
+        except Exception as e:
             db.session.rollback()
 
     @app.before_request
