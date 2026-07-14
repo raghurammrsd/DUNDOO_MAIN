@@ -363,7 +363,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 /* =========================================================================
    DUNDOO Production SPA & Instant Page Transition Engine
-   Eliminates browser top blue loading bar & full page reloads
+   Eliminates browser top blue loading bar & full page reloads for BOTH links & forms
 ========================================================================= */
 const pageCache = new Map();
 
@@ -385,7 +385,7 @@ function initSPAEngine() {
     }
   });
 
-  // Intercept clicks to perform smooth SPA transitions without browser blue line
+  // Intercept link clicks
   document.addEventListener("click", function (e) {
     const link = e.target.closest("a");
     if (!link || !isInternalLink(link) || link.hasAttribute("data-no-spa") || link.target === "_blank") return;
@@ -395,6 +395,65 @@ function initSPAEngine() {
     if (targetUrl === window.location.href) return;
 
     navigateToUrl(targetUrl, true);
+  });
+
+  // Intercept ALL form submissions (`register`, `login`, `search`, etc.) for instant SPA transitions
+  document.addEventListener("submit", function (e) {
+    const form = e.target;
+    if (!form || form.hasAttribute("data-no-spa") || form.target === "_blank") return;
+
+    const actionUrl = form.action || window.location.href;
+    const method = (form.method || "POST").toUpperCase();
+    const isInternal = new URL(actionUrl, window.location.origin).origin === window.location.origin;
+    if (!isInternal) return;
+
+    e.preventDefault();
+
+    // Show clean loading spinner on submit button
+    const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+    let originalBtnText = "";
+    if (submitBtn) {
+      originalBtnText = submitBtn.innerHTML || submitBtn.value;
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = "0.75";
+      submitBtn.innerHTML = '⚡ Processing...';
+    }
+
+    const fetchOptions = {
+      method: method,
+      credentials: "same-origin"
+    };
+    if (method !== "GET" && method !== "HEAD") {
+      fetchOptions.body = new FormData(form);
+    }
+
+    const shell = document.getElementById("spaMainShell") || document.querySelector(".main-shell");
+    if (shell) {
+      shell.style.transition = "opacity 0.15s ease, transform 0.15s ease";
+      shell.style.opacity = "0.5";
+    }
+
+    fetch(actionUrl, fetchOptions)
+      .then(res => {
+        const finalUrl = res.url || actionUrl;
+        return res.text().then(htmlText => ({ finalUrl, htmlText, ok: res.ok }));
+      })
+      .then(({ finalUrl, htmlText, ok }) => {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.style.opacity = "1";
+          submitBtn.innerHTML = originalBtnText;
+        }
+        handleSPAContentSwap(finalUrl, htmlText, true);
+      })
+      .catch(() => {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.style.opacity = "1";
+          submitBtn.innerHTML = originalBtnText;
+        }
+        form.submit();
+      });
   });
 
   window.addEventListener("popstate", function () {
@@ -415,57 +474,67 @@ function navigateToUrl(url, pushHistory) {
   const mainShell = document.getElementById("spaMainShell") || document.querySelector(".main-shell");
   if (!mainShell) { window.location.href = url; return; }
 
-  // Apply smooth transition out
   mainShell.style.transition = "opacity 0.15s ease, transform 0.15s ease";
   mainShell.style.opacity = "0.5";
   mainShell.style.transform = "translateY(4px)";
 
-  const handleHtml = (htmlText) => {
-    try {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(htmlText, "text/html");
-      const newMain = doc.querySelector(".main-shell");
-      const newTitle = doc.querySelector("title");
-
-      if (newMain) {
-        if (pushHistory) history.pushState({}, "", url);
-        if (newTitle) document.title = newTitle.innerText;
-
-        mainShell.innerHTML = newMain.innerHTML;
-        window.scrollTo({ top: 0, behavior: "smooth" });
-
-        // Re-run cart badges and scripts on new content
-        updateCartBadge();
-        updateWishlistBadge();
-        
-        // Smooth transition in
-        setTimeout(() => {
-          mainShell.style.opacity = "1";
-          mainShell.style.transform = "translateY(0)";
-        }, 30);
-      } else {
-        window.location.href = url;
-      }
-    } catch (err) {
-      window.location.href = url;
-    }
-  };
-
   if (pageCache.has(url)) {
-    handleHtml(pageCache.get(url));
+    handleSPAContentSwap(url, pageCache.get(url), pushHistory);
   } else {
-    fetch(url)
+    fetch(url, { credentials: "same-origin" })
       .then(res => {
         if (!res.ok) throw new Error("HTTP error");
-        return res.text();
+        const finalUrl = res.url || url;
+        return res.text().then(html => ({ finalUrl, html }));
       })
-      .then(htmlText => {
-        pageCache.set(url, htmlText);
-        handleHtml(htmlText);
+      .then(({ finalUrl, html }) => {
+        pageCache.set(finalUrl, html);
+        handleSPAContentSwap(finalUrl, html, pushHistory);
       })
       .catch(() => {
         window.location.href = url;
       });
+  }
+}
+
+function handleSPAContentSwap(targetUrl, htmlText, pushHistory) {
+  const mainShell = document.getElementById("spaMainShell") || document.querySelector(".main-shell");
+  if (!mainShell) { window.location.href = targetUrl; return; }
+
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, "text/html");
+    const newMain = doc.querySelector(".main-shell");
+    const newTitle = doc.querySelector("title");
+
+    if (newMain) {
+      if (pushHistory) history.pushState({}, "", targetUrl);
+      if (newTitle) document.title = newTitle.innerText;
+
+      mainShell.innerHTML = newMain.innerHTML;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      // Execute scripts embedded in the new page content dynamically
+      const scripts = mainShell.querySelectorAll("script");
+      scripts.forEach(oldScript => {
+        const newScript = document.createElement("script");
+        Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+        newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+        oldScript.parentNode.replaceChild(newScript, oldScript);
+      });
+
+      updateCartBadge();
+      updateWishlistBadge();
+      
+      setTimeout(() => {
+        mainShell.style.opacity = "1";
+        mainShell.style.transform = "translateY(0)";
+      }, 30);
+    } else {
+      window.location.href = targetUrl;
+    }
+  } catch (err) {
+    window.location.href = targetUrl;
   }
 }
 </script>
