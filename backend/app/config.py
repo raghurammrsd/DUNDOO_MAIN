@@ -26,6 +26,13 @@ class Config:
 
     SQLALCHEMY_DATABASE_URI = _db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 180,
+        "pool_size": 5,
+        "max_overflow": 15,
+        "pool_timeout": 30,
+    }
 
     # Cloudinary Config
     CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")

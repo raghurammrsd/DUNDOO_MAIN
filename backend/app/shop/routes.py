@@ -87,11 +87,16 @@ def register():
             longitude=longitude
         )
 
-        db.session.add(new_shop)
-        db.session.commit()
-
-        flash("Shop registered successfully. Login with OTP.", "success")
-        return redirect(url_for("shop.login"))
+        try:
+            db.session.add(new_shop)
+            db.session.commit()
+            flash("Shop registered successfully. Login with OTP.", "success")
+            return redirect(url_for("shop.login"))
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error registering shop: {e}")
+            flash("An error occurred during registration. Please try again.", "danger")
+            return redirect(url_for("shop.register"))
 
     return render_template("shop/register.html")
 

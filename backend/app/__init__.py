@@ -38,10 +38,21 @@ def create_app():
     Migrate(app, db)
     login_manager.init_app(app)
 
-    
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        if exception:
+            db.session.rollback()
+        db.session.remove()
+
     with app.app_context():
         from app.models import User, Shopkeeper, Product, Order, Wishlist, FavoriteShop, Review
-        db.create_all()
+        try:
+            db.create_all()
+        except Exception as e:
+            app.logger.warning(f"Database sync check skipped or errored ({e})")
+        finally:
+            if hasattr(db, "engine"):
+                db.engine.dispose()
 
     @login_manager.user_loader
     def load_user(user_id):

@@ -114,11 +114,16 @@ def verify_otp_view():
             password_hash=password_hash,
             email_verified=True,
         )
-        db.session.add(new_user)
-        db.session.commit()
-
-        flash("Account created successfully! Login now.", "success")
-        return redirect(url_for("user.login"))
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            flash("Account created successfully! Login now.", "success")
+            return redirect(url_for("user.login"))
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error creating user account: {e}")
+            flash("An error occurred during account creation. Please try again.", "danger")
+            return redirect(url_for("user.verify_otp_view"))
 
     return render_template(
         "auth/verify_otp.html",
