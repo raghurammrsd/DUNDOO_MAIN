@@ -19,6 +19,9 @@ login_manager = LoginManager()
 login_manager.login_view = "user.login"
 
 
+_worker_pid = None
+
+
 def create_app():
     base_dir = os.path.abspath(os.path.dirname(__file__))
     template_dir = os.getenv("FLASK_TEMPLATE_FOLDER", os.path.join(base_dir, "../../frontend/templates"))
@@ -41,6 +44,14 @@ def create_app():
 
     @app.before_request
     def ensure_db_connection():
+        global _worker_pid
+        current_pid = os.getpid()
+        if _worker_pid != current_pid:
+            _worker_pid = current_pid
+            db.session.remove()
+            if hasattr(db, "engine"):
+                db.engine.dispose()
+
         if request.path.startswith("/static/") or request.path == "/favicon.ico":
             return
         try:

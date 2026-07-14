@@ -157,7 +157,14 @@ def login():
         username = (request.form.get("username") or "").strip()
         password = (request.form.get("password") or "").strip()
 
-        user = User.query.filter_by(username=username).first()
+        try:
+            user = User.query.filter_by(username=username).first()
+        except Exception as e:
+            db.session.rollback()
+            db.session.remove()
+            if hasattr(db, "engine"):
+                db.engine.dispose()
+            user = User.query.filter_by(username=username).first()
 
         if not user:
             flash("Invalid username or password.", "danger")

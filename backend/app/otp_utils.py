@@ -88,7 +88,13 @@ def get_current_record():
         return OTPRequest.query.get(otp_id)
     except Exception as e:
         db.session.rollback()
-        return None
+        db.session.remove()
+        if hasattr(db, "engine"):
+            db.engine.dispose()
+        try:
+            return OTPRequest.query.get(otp_id)
+        except Exception:
+            return None
 
 
 def verify_otp(submitted_code: str, expected_context: str):
