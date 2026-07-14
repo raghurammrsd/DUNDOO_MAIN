@@ -365,9 +365,10 @@ def update_order_status():
     order.status = status
     db.session.commit()
     try:
-        subj = f"Order #{order.id} Status Updated: {status}"
-        body = f"Hello {shop.shopkeeper_name},\nYour shop '{shop.shop_name}' has updated Order #{order.id} status to: *{status}*.\nCustomer ({order.user.username if order.user else 'User'}) has been notified automatically.\n\nDUNDOO WhatsApp Member Automation"
-        send_whatsapp_alert(shop, subj, body, message_type="order")
+        if order.user:
+            subj = f"Order #{order.id} Status Updated: {status}"
+            body = f"Hello {order.user.username},\n\nYour order from shop '{shop.shop_name}' has been updated to: *{status}*.\n• Item: {order.product.product_name if order.product else 'Product'}\n• Amount: ₹{order.price}\n\nThank you for shopping nearby on DUNDOO AI Marketplace!"
+            send_whatsapp_alert(order.user, subj, body, message_type="order")
     except Exception as e:
         current_app.logger.error(f"WhatsApp order status alert error: {e}")
     return jsonify({"success": True, "status": status})

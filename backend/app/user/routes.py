@@ -86,6 +86,7 @@ def register():
             username=username,
             email=email,
             phone=phone,
+            whatsapp_number=phone,
             password_hash=hashed,
             email_verified=True,
         )

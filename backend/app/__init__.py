@@ -46,6 +46,7 @@ def create_app():
         try:
             db.session.execute(text("ALTER TABLE shopkeepers ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255);"))
             db.session.execute(text("ALTER TABLE shopkeepers ADD COLUMN IF NOT EXISTS whatsapp_number VARCHAR(20);"))
+            db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp_number VARCHAR(20);"))
             db.create_all()
             db.session.commit()
         except Exception as e:

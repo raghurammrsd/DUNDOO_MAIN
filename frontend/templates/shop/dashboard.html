@@ -182,62 +182,6 @@
       </div>
     </section>
 
-    <section class="card table-card" style="border: 2px solid #16a34a; background: #f0fdf4;">
-      <div class="card-header" style="background: #dcfce7; border-bottom: 1px solid #bbf7d0; display: flex; justify-content: space-between; align-items: center;">
-        <span style="color: #166534; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-          📲 DUNDOO Automated WhatsApp Member Alerts (Live Feed)
-        </span>
-        <span style="background: #16a34a; color: #fff; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 800;">
-          Member Account: {{ shop.shop_name }} • WhatsApp ID: {{ shop.whatsapp_number or shop.phone or 'Active' }}
-        </span>
-      </div>
-      <div class="card-body table-wrapper" style="padding: 16px;">
-        <p style="font-size: 13px; color: #166534; margin-bottom: 14px; font-weight: 600;">
-          ✨ Every inventory alert, new customer order, and status notification is automatically formatted and dispatched to your registered WhatsApp member number via DUNDOO Cloud AI. Below is your real-time WhatsApp automation dispatch log:
-        </p>
-        <table class="table" style="background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-          <thead>
-            <tr style="background: #f8fafc;">
-              <th>Time</th>
-              <th>Type</th>
-              <th>WhatsApp Recipient</th>
-              <th>Subject</th>
-              <th>Message Content (Official DUNDOO Branding)</th>
-              <th class="text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% if whatsapp_messages %}
-              {% for msg in whatsapp_messages %}
-              <tr>
-                <td style="font-weight: 600; font-size: 12.5px; white-space: nowrap;">{{ msg.created_at.strftime('%d %b, %H:%M') if msg.created_at else 'Just now' }}</td>
-                <td>
-                  <span style="padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; background: {% if msg.message_type == 'order' %}#dbeafe; color: #1e40af{% elif msg.message_type == 'inventory' %}#fee2e2; color: #b91c1c{% else %}#dcfce7; color: #166534{% endif %};">
-                    {{ msg.message_type }}
-                  </span>
-                </td>
-                <td style="font-weight: 700; color: #166534;">{{ msg.recipient_number }}</td>
-                <td style="font-weight: 700; color: #111827;">{{ msg.subject }}</td>
-                <td style="font-size: 12px; color: #374151; white-space: pre-line; max-width: 380px;">{{ msg.message_body }}</td>
-                <td class="text-right" style="white-space: nowrap;">
-                  <a href="https://wa.me/{{ msg.recipient_number | replace('+', '') }}?text={{ msg.message_body | urlencode }}" target="_blank" class="premium-btn" style="text-decoration: none; padding: 6px 12px; font-size: 12px; background: #25d366; color: #fff; font-weight: 800; border-radius: 6px; display: inline-block;">
-                    📲 View in WhatsApp
-                  </a>
-                </td>
-              </tr>
-              {% endfor %}
-            {% else %}
-              <tr>
-                <td colspan="6" class="empty-row" style="padding: 24px; text-align: center; color: #64748b; font-weight: 600;">
-                  No WhatsApp automated messages dispatched yet. When inventory drops below threshold or a new customer order arrives, it will appear here and trigger directly on your WhatsApp!
-                </td>
-              </tr>
-            {% endif %}
-          </tbody>
-        </table>
-      </div>
-    </section>
-
     <section class="card table-card">
       <div class="card-header card-header-actions">
         <span>Current Stock</span>
