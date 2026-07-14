@@ -10,6 +10,7 @@ from flask import (
 )
 from sqlalchemy import func
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
@@ -54,6 +55,7 @@ def register():
         shop_name = request.form.get("shop_name", "").strip()
         shopkeeper_name = request.form.get("shopkeeper_name", "").strip()
         email = request.form.get("email", "").strip()
+        password = request.form.get("password", "").strip()
         address = request.form.get("address", "").strip()
         pincode = request.form.get("pincode", "").strip()
         landmark = request.form.get("landmark", "").strip()
@@ -61,7 +63,7 @@ def register():
         lat_raw = request.form.get("latitude", "").strip()
         lng_raw = request.form.get("longitude", "").strip()
 
-        if not all([shop_name, shopkeeper_name, email, address, pincode]):
+        if not all([shop_name, shopkeeper_name, email, password, address, pincode]):
             flash("All fields are required.", "danger")
             return redirect(url_for("shop.register"))
 
@@ -84,14 +86,16 @@ def register():
             pincode=pincode,
             landmark=landmark or None,
             latitude=latitude,
-            longitude=longitude
+            longitude=longitude,
+            password_hash=generate_password_hash(password)
         )
 
         try:
             db.session.add(new_shop)
             db.session.commit()
-            flash("Shop registered successfully. Login with OTP.", "success")
-            return redirect(url_for("shop.login"))
+            start_otp_flow("shop_register", email, shopkeeper_name, {"shop_id": new_shop.id})
+            flash("We sent a verification code to your email.", "info")
+            return redirect(url_for("shop.verify_otp_view"))
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Error registering shop: {e}")
@@ -104,53 +108,68 @@ def register():
 
 
 
-@shop_bp.route("/login", methods=["GET","POST"])
+@shop_bp.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        shop_name = request.form.get("shop_name")
-        pincode = request.form.get("pincode")
-        email = request.form.get("email")
+        identifier = (request.form.get("shop_name") or "").strip()
+        password = (request.form.get("password") or "").strip()
 
         try:
             shop = Shopkeeper.query.filter(
-                func.lower(Shopkeeper.shop_name)==shop_name.lower(),
-                Shopkeeper.pincode==pincode,
-                func.lower(Shopkeeper.email)==email.lower()
+                db.or_(
+                    func.lower(Shopkeeper.shop_name) == identifier.lower(),
+                    func.lower(Shopkeeper.email) == identifier.lower()
+                )
             ).first()
         except Exception as e:
             db.session.rollback()
+            db.session.remove()
             if hasattr(db, "engine"):
                 db.engine.dispose()
             shop = Shopkeeper.query.filter(
-                func.lower(Shopkeeper.shop_name)==shop_name.lower(),
-                Shopkeeper.pincode==pincode,
-                func.lower(Shopkeeper.email)==email.lower()
+                db.or_(
+                    func.lower(Shopkeeper.shop_name) == identifier.lower(),
+                    func.lower(Shopkeeper.email) == identifier.lower()
+                )
             ).first()
 
         if not shop:
-            flash("Invalid credentials", "danger")
+            flash("Invalid shop name/email or password.", "danger")
             return redirect(url_for("shop.login"))
 
-        start_otp_flow("shop_login", email, shop.shopkeeper_name, {"shop_id":shop.id})
-        return redirect(url_for("shop.verify_otp_view"))
+        is_valid = False
+        if shop.password_hash:
+            is_valid = check_password_hash(shop.password_hash, password)
+        else:
+            is_valid = (shop.pincode == password)
+
+        if not is_valid:
+            flash("Invalid shop name/email or password.", "danger")
+            return redirect(url_for("shop.login"))
+
+        session["shop_id"] = shop.id
+        flash("Welcome back to your shop dashboard!", "success")
+        return redirect(url_for("shop.dashboard"))
 
     return render_template("shop/login.html")
 
-@shop_bp.route("/verify-otp", methods=["GET","POST"])
+
+@shop_bp.route("/verify-otp", methods=["GET", "POST"])
 def verify_otp_view():
     rec = get_current_record()
     if not rec:
         return redirect(url_for("shop.login"))
 
-    if request.method=="POST":
-        ok,data = verify_otp(request.form.get("otp"), "shop_login")
+    if request.method == "POST":
+        ok, data = verify_otp(request.form.get("otp"), rec.context)
         if not ok:
-            flash(data,"danger")
+            flash(data, "danger")
             return redirect(url_for("shop.verify_otp_view"))
         session["shop_id"] = data["payload"]["shop_id"]
+        flash("Shop verified and registered successfully!", "success")
         return redirect(url_for("shop.dashboard"))
 
-    return render_template("auth/verify_otp.html", email=rec.email, role="shop", dev_otp=session.get("dev_otp_code"))
+    return render_template("auth/verify_otp.html", email=rec.email, role="shop")
 
 
 

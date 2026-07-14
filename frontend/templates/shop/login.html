@@ -4,51 +4,39 @@
 {% block content %}
 <div class="form-page">
   <div class="form-card-auth">
-    <p class="form-eyebrow">Shopkeeper Login (OTP)</p>
+    <p class="form-eyebrow">Shopkeeper Direct Login</p>
     <h1 class="form-title-main">Welcome back</h1>
     <p class="form-subtitle">
-      Login with your registered shop details. We’ll send a one-time OTP to your email.
+      Login directly to your shop dashboard using your registered shop name (or email) and password.
     </p>
 
     <form method="post" class="form-grid">
       <div class="form-group">
-        <label for="shop_name" class="form-label">Shop name</label>
+        <label for="shop_name" class="form-label">Shop name or Email</label>
         <input
           type="text"
           id="shop_name"
           name="shop_name"
           class="form-input"
-          placeholder="RR Bakery"
+          placeholder="RR Bakery or you@example.com"
           required
         >
       </div>
 
       <div class="form-group">
-        <label for="pincode" class="form-label">Pincode</label>
+        <label for="password" class="form-label">Password</label>
         <input
-          type="text"
-          id="pincode"
-          name="pincode"
+          type="password"
+          id="password"
+          name="password"
           class="form-input"
-          placeholder="560001"
-          required
-        >
-      </div>
-
-      <div class="form-group">
-        <label for="email" class="form-label">Registered email</label>
-        <input
-          type="email"
-          id="email"
-          name="email"
-          class="form-input"
-          placeholder="you@example.com"
+          placeholder="Enter your shop password"
           required
         >
       </div>
 
       <button type="submit" class="btn btn-primary form-primary-btn">
-        Send OTP
+        Login to Dashboard
       </button>
 
       <div class="form-footer-text">

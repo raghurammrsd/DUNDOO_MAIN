@@ -33,6 +33,7 @@ class Shopkeeper(db.Model):
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    password_hash = db.Column(db.String(255), nullable=True)
 
     
 

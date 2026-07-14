@@ -42,6 +42,13 @@ def create_app():
     Migrate(app, db)
     login_manager.init_app(app)
 
+    with app.app_context():
+        try:
+            db.session.execute(text("ALTER TABLE shopkeepers ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255);"))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
     @app.before_request
     def ensure_db_connection():
         global _worker_pid
